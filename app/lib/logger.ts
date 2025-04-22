@@ -64,7 +64,7 @@ export const logger = {
   /**
    * 성능 모니터링 트랜잭션 시작
    */
-  startTransaction(name: string, op: string): Sentry.Transaction | undefined {
+  startTransaction(name: string, op: string): any | undefined {
     return Sentry.startTransaction({
       name,
       op,

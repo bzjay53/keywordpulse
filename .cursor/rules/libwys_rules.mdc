@@ -1,0 +1,41 @@
+```
+# Cursor AI Project Rules
+
+This document consolidates the core rules and best practices to guide development, documentation, and deployment for the KeywordPulse project under Cursor AI. It ensures consistency, maintainability, and high quality across CLI usage, RAG pipelines, refactoring efforts, WBS scheduling, debugging protocols, knowledge management, CI/CD, and serverless architecture.
+
+## 1. CLI Usage Guidelines
+- **Avoid `&&` chaining in Windows PowerShell**; instead, use the `-and` operator or separate commands to maintain error handling integrity citeturn0search0.  
+- **For cross‑platform CLI scripts**, prefer semicolons (`;`) in Unix‑like shells and PowerShell 7 pipeline operators, avoiding PowerShell’s legacy `&&` usage citeturn0search9.  
+
+## 2. Documentation References
+- **Always consult the core documents**—RAG System, Refactoring Strategy, WBS Plan, Debugging Guide, and Reference Document—before coding or modifying features citeturn0search5.  
+- **Use a unified knowledge management platform** (e.g., Confluence, Document360) to store and cross‑reference all project documentation, ensuring version control and discoverability citeturn0search14.  
+
+## 3. RAG (Retrieval‑Augmented Generation) Rules
+- **Implement a templated RAG workflow**: retrieve structured data, apply the generation template, and output Markdown; do not alter prompts ad‑hoc without updating the RAG System document citeturn0search1.  
+- **Cache prompts and responses** to avoid redundant LLM calls, ensuring reproducibility and cost‑efficiency in production pipelines citeturn0news104.  
+
+## 4. Refactoring Standards
+- **Refactor in small, incremental steps** guarded by automated tests; collaborate with QA to verify behavior after each change citeturn0search2.  
+- **Centralize utility logic** in shared modules and enforce clear naming conventions (`snake_case` for Python, `CamelCase` for TypeScript) to improve readability citeturn0search11.  
+
+## 5. WBS Adherence
+- **Adopt a process‑oriented WBS**, breaking work into clear, mutually exclusive deliverables with an accompanying WBS dictionary to clarify scope citeturn0search3.  
+- **Continuously update the WBS** as tasks evolve, linking each item to its documentation and code modules to reflect real‑time progress citeturn0search12.  
+
+## 6. Debugging Protocols
+- **Use systematic debugging techniques**—rubber ducking, log analysis, and breakpoints—to isolate and resolve issues efficiently citeturn0search4.  
+- **Log exceptions with context** (user ID, timestamp) at appropriate levels (`info`, `warn`, `error`) to facilitate rapid root‑cause analysis citeturn0search13.  
+
+## 7. Knowledge Management & Continuous Updates
+- **Structure documentation with hyperlinks and cross‑references**, grouping related topics (API spec, UI/UX, auth) for on‑demand navigation citeturn0search5.  
+- **Schedule regular documentation reviews** (e.g., before each sprint demo) to keep RAG, Refactoring, WBS, and Debugging guides current and accurate citeturn0search24.  
+
+## 8. CI/CD & Automation Rules
+- **Maintain green builds**: commit early, test often, build artifacts once, and automate layered test coverage (unit, integration) for quick feedback citeturn0search6turn0search15.  
+- **Secure pipeline secrets** in environment variable stores (Vercel, GitHub Secrets) and never expose tokens in logs or code citeturn0search25.  
+
+## 9. Serverless Architecture Best Practices
+- **Keep functions small and focused**: each function should handle a single responsibility and remain stateless for scalability and maintainability citeturn0search7.  
+- **Organize code repositories by service or function** rather than monolithic structures, facilitating independent deployment and easier code management citeturn0search26.  
+```

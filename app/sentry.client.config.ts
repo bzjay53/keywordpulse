@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nextjs';
 
-const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN;
+// 클라이언트와 서버 간의 일관성을 위해 SENTRY_DSN 환경 변수 사용
+const SENTRY_DSN = process.env.SENTRY_DSN;
 
 Sentry.init({
   dsn: SENTRY_DSN || 'https://examplePublicKey@o0.ingest.sentry.io/0',

@@ -1,0 +1,37 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.10",
+      "maxDuration": 30
+    }
+  },
+  "builds": [
+    {
+      "src": "api/*.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "app/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/main.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app/$1"
+    }
+  ],
+  "installCommand": "cd app && npm install --no-package-lock",
+  "buildCommand": "cd app && npm run build",
+  "outputDirectory": "app/.next",
+  "github": {
+    "enabled": true,
+    "silent": false
+  },
+  "framework": "nextjs"
+} 

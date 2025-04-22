@@ -1,11 +1,28 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
+import { isUserAdmin } from '@/lib/supabaseClient';
 
 const Header: React.FC = () => {
   const { user, isLoading, logout } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user) {
+        // 간단한 예시에서는 이메일로 관리자 확인
+        if (user.email === 'admin@example.com') {
+          setIsAdmin(true);
+        }
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -42,6 +59,13 @@ const Header: React.FC = () => {
             ) : user ? (
               // 로그인 상태일 때 표시
               <>
+                {isAdmin && (
+                  <li>
+                    <Link href="/admin" className="text-gray-600 hover:text-primary-600">
+                      관리자
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <Link href="/profile" className="text-gray-600 hover:text-primary-600">
                     내 프로필

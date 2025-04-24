@@ -10,6 +10,32 @@ KeywordPulse는 서버리스 환경에서 동작하는 실시간 키워드 분�
 - **Telegram 알림**: 분석 결과를 텔레그램으로 전송
 - **반응형 UI**: 모바일/데스크탑 환경 모두에서 최적화된 경험
 
+## 🤖 RAG 시스템 (Retrieval-Augmented Generation)
+
+KeywordPulse는 고급 RAG(Retrieval-Augmented Generation) 시스템을 통해 키워드 분석 결과를 구조화된 마크다운 형식의 텍스트로 변환합니다.
+
+### 주요 특징
+
+- **카테고리 기반 분석**: 입력 키워드를 '디지털 마케팅', '앱 개발', 'AI 기술', '3D 모델링/AI', '일반' 등 카테고리로 자동 분류
+- **캐싱 메커니즘**: 성능 최적화를 위한 메모이제이션 구현
+- **마크다운 출력**: 분석 결과를 마크다운 형식으로 제공하여 즉시 활용 가능
+- **인사이트와 전략**: 키워드별 맞춤형 인사이트와 콘텐츠 제작 전략 제공
+
+### 사용 방법
+
+RAG 시스템은 API 엔드포인트를 통해 접근하거나, 프론트엔드 UI를 통해 간편하게 사용할 수 있습니다:
+
+```typescript
+// API를 통한 직접 호출 예시
+const response = await fetch('/api/analyze', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ keywords: ['인공지능', 'GPT4', '머신러닝'] })
+});
+const data = await response.json();
+console.log(data.analysis); // 마크다운 형식의 분석 결과
+```
+
 ## 🛠️ 기술 스택
 
 - **프론트엔드**: Next.js, React, TypeScript, TailwindCSS

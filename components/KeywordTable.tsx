@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import useKeywordScoreBadge from '../app/hooks/useKeywordScoreBadge';
-import useKeywordSorting from '../app/hooks/useKeywordSorting';
+import useKeywordSorting from '../hooks/useKeywordSorting';
 
 interface KeywordInfo {
   keyword: string;

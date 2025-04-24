@@ -144,6 +144,18 @@ export async function getRelatedKeywords(
       '퍼포먼스 마케팅 성과',
       '디지털 마케팅 ROI',
       '마케팅 자동화 도구'
+    ],
+    '콘텐츠 전략': [
+      '콘텐츠 전략 수립 방법',
+      '콘텐츠 마케팅 전략',
+      '콘텐츠 전략 사례',
+      '콘텐츠 전략 프레임워크',
+      '콘텐츠 유형별 전략',
+      '콘텐츠 전략 KPI',
+      '콘텐츠 캘린더 작성법',
+      '타깃 고객 페르소나',
+      '콘텐츠 전략 도구',
+      '콘텐츠 SEO 최적화'
     ]
   };
   
@@ -157,18 +169,18 @@ export async function getRelatedKeywords(
     }
   }
   
-  // 관련 검색어가 없는 경우 일반적인 검색어 반환
+  // 관련 검색어가 없는 경우, 입력 키워드를 기반으로 관련 검색어 생성
   return [
     `${keyword} 사용법`,
     `${keyword} 리뷰`,
-    `${keyword} 추천`,
     `${keyword} 비교`,
     `${keyword} 가격`,
     `${keyword} 장단점`,
-    `${keyword} 튜토리얼`,
-    `${keyword} 2023`,
+    `${keyword} 추천`,
+    `${keyword} 초보자`,
     `${keyword} 최신`,
-    `${keyword} 대안`
+    `${keyword} 대안`,
+    `${keyword} 트렌드`
   ].slice(0, count);
 }
 

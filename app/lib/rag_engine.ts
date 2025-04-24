@@ -50,7 +50,7 @@ const CATEGORY_PATTERNS = {
 };
 
 // 캐시 객체 선언 (메모이제이션용)
-const keywordCategoryCache: Map<string, KeywordCategory> = new Map<string, KeywordCategory>();
+const keywordCategoryCache = new Map<string, KeywordCategory>();
 
 /**
  * 키워드를 분석하여 적절한 카테고리로 분류합니다.
@@ -70,7 +70,8 @@ export function categorizeKeyword(keyword: string): KeywordCategory {
   // 캐시된 결과가 있으면 반환 (메모이제이션)
   const normalizedKeyword = keyword.toLowerCase().trim();
   if (keywordCategoryCache.has(normalizedKeyword)) {
-    return keywordCategoryCache.get(normalizedKeyword)!;
+    const cachedCategory = keywordCategoryCache.get(normalizedKeyword);
+    return cachedCategory as KeywordCategory;
   }
   
   // 개선된 카테고리 분류 알고리즘: 가중치 기반 접근

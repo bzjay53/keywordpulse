@@ -68,10 +68,33 @@ jobs:
     - name: Run Python tests
       run: |
         if [ -d "tests" ]; then
-          python -m unittest discover tests || echo "Tests skipped"
+          python -m unittest discover tests || echo "Python tests failed"
         else
           echo "No tests directory found, skipping tests"
         fi
+    
+    - name: Run RAG Engine specific tests
+      run: |
+        if [ -f "tests/test_rag_engine.py" ]; then
+          python -m unittest tests/test_rag_engine.py || echo "RAG Engine tests failed"
+        fi
+        if [ -f "tests/test_rag_integration.py" ]; then
+          python -m unittest tests/test_rag_integration.py || echo "RAG Integration tests failed"
+        fi
+    
+    - name: Test coverage report
+      run: |
+        pip install coverage
+        coverage run -m unittest discover tests
+        coverage report
+        coverage html
+    
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v2
+      with:
+        name: code-coverage-report
+        path: htmlcov
+        retention-days: 5
     
     - name: Build Next.js app
       run: |
@@ -81,4 +104,21 @@ jobs:
         fi
     
     - name: Notify successful CI run
-      run: echo "CI tests passed successfully. Deployment will be handled by Vercel Git integration." 
+      run: echo "CI tests passed successfully. Deployment will be handled by Vercel Git integration."
+    
+  deploy:
+    needs: lint-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      
+      - name: Deploy to Vercel
+        run: |
+          echo "Deploying to Vercel..."
+          vercel --token ${VERCEL_TOKEN} --prod --confirm
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} 

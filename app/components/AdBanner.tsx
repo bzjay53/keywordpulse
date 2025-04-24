@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
+// AdSense를 위한 전역 타입 선언
+declare global {
+  interface Window {
+    adsbygoogle: any[];
+  }
+}
+
 interface AdBannerProps {
   slot?: string;
   format?: 'auto' | 'rectangle' | 'horizontal' | 'vertical';

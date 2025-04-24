@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
 
 // 환경 변수 또는 기본값 설정
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -142,7 +143,7 @@ export async function getUser() {
         user_metadata: {},
         aud: 'authenticated',
         created_at: new Date().toISOString()
-      } as unknown as User;
+      } as User;
     }
     
     return null;

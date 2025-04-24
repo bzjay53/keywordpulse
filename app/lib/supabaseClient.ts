@@ -9,9 +9,30 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 export const DEV_ADMIN_EMAIL = 'admin@example.com';
 export const DEV_ADMIN_PASSWORD = 'admin123';
 
+// 개발 모드를 위한 사용자 타입 정의
+interface DevUser {
+  email: string;
+  password: string;
+  id: string;
+  role: string;
+  created_at: string;
+}
+
+// 개발 모드를 위한 사용자 DB
+const DEV_USERS = typeof window !== 'undefined' ? 
+  JSON.parse(localStorage.getItem('kp_dev_users') || '[]') as DevUser[] : 
+  [] as DevUser[];
+
+// 개발 모드용 사용자 저장
+const saveDevUsers = (users: DevUser[]) => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('kp_dev_users', JSON.stringify(users));
+  }
+};
+
 // 실제 환경 변수가 없는 경우 경고 로그 출력
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase 환경변수가 설정되지 않았습니다. 인증 기능이 동작하지 않을 수 있습니다.');
+  console.warn('Supabase 환경변수가 설정되지 않았습니다. 개발 모드로 인증 기능이 동작합니다.');
   console.warn('NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 확인해주세요.');
   console.warn(`개발 모드에서는 ${DEV_ADMIN_EMAIL} / ${DEV_ADMIN_PASSWORD} 계정으로 로그인할 수 있습니다.`);
 }
@@ -24,27 +45,38 @@ export const LOCAL_STORAGE_KEYS = {
   SEARCH_COUNT: 'kp_search_count',
   USER_ID: 'kp_user_id',
   LAST_SEARCH_TIME: 'kp_last_search_time',
-  HAS_WATCHED_AD: 'kp_has_watched_ad'
+  HAS_WATCHED_AD: 'kp_has_watched_ad',
+  CURRENT_USER: 'kp_current_user'
 };
 
 export async function signUp(email: string, password: string) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase 환경 변수가 없어 모의 응답을 반환합니다.');
+    console.warn('Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
-    if (email === DEV_ADMIN_EMAIL) {
+    // 개발 모드: 이미 가입된 이메일인지 확인
+    const existingUser = DEV_USERS.find((user: DevUser) => user.email === email);
+    
+    if (existingUser || email === DEV_ADMIN_EMAIL) {
       return { 
         data: null, 
         error: { message: '이미 가입된 이메일입니다. 로그인을 시도해주세요.' } 
       };
     }
     
-    // 로컬 스토리지에 사용자 정보 저장
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ID, email);
-    }
+    // 새 사용자 생성 및 저장
+    const newUser = { 
+      email, 
+      password, // 실제 환경에서는 저장하지 않음, 개발용!
+      id: `dev-user-${Date.now()}`, 
+      role: 'user',
+      created_at: new Date().toISOString()
+    };
+    
+    const updatedUsers = [...DEV_USERS, newUser];
+    saveDevUsers(updatedUsers);
     
     return { 
-      data: { user: { email, id: 'dev-user-id', role: 'user' } }, 
+      data: { user: { email, id: newUser.id, role: 'user' } }, 
       error: null 
     };
   }
@@ -57,18 +89,50 @@ export async function signUp(email: string, password: string) {
 
 export async function signIn(email: string, password: string) {
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase 환경 변수가 없어 모의 응답을 반환합니다.');
+    console.warn('Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
     // 개발 모드에서 관리자 계정으로 로그인 허용
     if (email === DEV_ADMIN_EMAIL && password === DEV_ADMIN_PASSWORD) {
       // 로컬 스토리지에 사용자 정보 저장
       if (typeof window !== 'undefined') {
+        const adminUser = {
+          email,
+          id: 'dev-admin-id',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        };
+        
         localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ID, email);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_USER, JSON.stringify(adminUser));
       }
       
       return { 
         data: { 
           user: { email, id: 'dev-admin-id', role: 'admin' },
+          session: { access_token: 'mock-token', expires_at: Date.now() + 24 * 60 * 60 * 1000 }  
+        }, 
+        error: null 
+      };
+    }
+    
+    // 개발 모드: 등록된 사용자 확인
+    const user = DEV_USERS.find((user: DevUser) => user.email === email && user.password === password);
+    
+    if (user) {
+      // 로컬 스토리지에 사용자 정보 저장
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ID, email);
+        localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_USER, JSON.stringify({
+          email,
+          id: user.id,
+          role: 'user',
+          created_at: user.created_at
+        }));
+      }
+      
+      return { 
+        data: { 
+          user: { email, id: user.id, role: 'user' },
           session: { access_token: 'mock-token', expires_at: Date.now() + 24 * 60 * 60 * 1000 }  
         }, 
         error: null 
@@ -92,6 +156,7 @@ export async function signOut() {
     // 로컬 스토리지에서 사용자 정보 제거
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_ID);
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.CURRENT_USER);
     }
     return { error: null };
   }
@@ -102,23 +167,28 @@ export async function signOut() {
 export async function getSession() {
   if (!supabaseUrl || !supabaseAnonKey) {
     // 개발 모드에서 세션 모의
-    const userId = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID) : null;
+    const userJson = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_USER) : null;
     
-    if (userId) {
-      const isAdmin = userId === DEV_ADMIN_EMAIL;
-      
-      return { 
-        data: { 
-          session: {
-            user: { 
-              id: isAdmin ? 'dev-admin-id' : 'dev-user-id',
-              email: userId,
-              role: isAdmin ? 'admin' : 'user'
+    if (userJson) {
+      try {
+        const user = JSON.parse(userJson);
+        const isAdmin = user.email === DEV_ADMIN_EMAIL;
+        
+        return { 
+          data: { 
+            session: {
+              user: { 
+                id: user.id,
+                email: user.email,
+                role: isAdmin ? 'admin' : 'user'
+              }
             }
-          }
-        }, 
-        error: null 
-      };
+          }, 
+          error: null 
+        };
+      } catch (e) {
+        console.error('세션 파싱 오류:', e);
+      }
     }
     
     return { data: { session: null }, error: null };
@@ -130,20 +200,26 @@ export async function getSession() {
 export async function getUser() {
   if (!supabaseUrl || !supabaseAnonKey) {
     // 개발 모드에서 사용자 모의
-    const userId = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID) : null;
+    const userJson = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_USER) : null;
     
-    if (userId) {
-      const isAdmin = userId === DEV_ADMIN_EMAIL;
-      // User 타입에 맞는 최소한의 필수 필드 포함
-      return {
-        id: isAdmin ? 'dev-admin-id' : 'dev-user-id',
-        email: userId,
-        role: isAdmin ? 'admin' : 'user',
-        app_metadata: {},
-        user_metadata: {},
-        aud: 'authenticated',
-        created_at: new Date().toISOString()
-      } as User;
+    if (userJson) {
+      try {
+        const user = JSON.parse(userJson);
+        const isAdmin = user.email === DEV_ADMIN_EMAIL;
+        
+        // User 타입에 맞는 최소한의 필수 필드 포함
+        return {
+          id: user.id,
+          email: user.email,
+          role: isAdmin ? 'admin' : 'user',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: user.created_at || new Date().toISOString()
+        } as User;
+      } catch (e) {
+        console.error('사용자 파싱 오류:', e);
+      }
     }
     
     return null;

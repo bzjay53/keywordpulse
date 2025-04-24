@@ -30,7 +30,7 @@ const CATEGORY_PATTERNS = {
     { pattern: /mcp.*블렌더|블렌더.*mcp|3d\s*모델링|모델링/i, match: true },
   ],
   'AI 기술': [
-    { pattern: /ai|인공지능|llm|gpt|머신러닝|딥러닝|챗봇/i, match: true },
+    { pattern: /ai|인공지능|llm|gpt|머신러닝|딥러닝|챗봇|claude/i, match: true },
   ],
   '디지털 마케팅': [
     { pattern: /마케팅|광고|seo|콘텐츠|브랜딩|sns|소셜미디어/i, match: true },
@@ -50,7 +50,7 @@ const CATEGORY_PATTERNS = {
 };
 
 // 캐시 객체 선언 (메모이제이션용)
-const keywordCategoryCache = new Map<string, KeywordCategory>();
+const keywordCategoryCache: Map<string, KeywordCategory> = new Map<string, KeywordCategory>();
 
 /**
  * 키워드를 분석하여 적절한 카테고리로 분류합니다.
@@ -403,13 +403,14 @@ function customizeAnalysisForUser(
   // 전략 수 조정
   if (preferences.strategyCount !== undefined && preferences.strategyCount > 0) {
     const strategyPattern = language === 'ko' 
-      ? /### 콘텐츠 제작 전략\n\n((?:\d+\. .+\n)+)/
-      : /### Content Strategy\n\n((?:\d+\. .+\n)+)/;
+      ? /### 콘텐츠 제작 전략\n\n((?:\d+\. .+\n?)+)/
+      : /### Content Strategy\n\n((?:\d+\. .+\n?)+)/;
     
     const strategyMatch = customized.match(strategyPattern);
     if (strategyMatch) {
       const strategies = strategyMatch[1].split('\n').filter(line => /^\d+\./.test(line));
-      const limitedStrategies = strategies.slice(0, Math.min(preferences.strategyCount, strategies.length));
+      const limitedStrategies = strategies.slice(0, preferences.strategyCount); // 정확히 요청한 개수만큼 제한
+      
       // 번호 재지정
       const renumberedStrategies = limitedStrategies.map((strategy, index) => 
         strategy.replace(/^\d+\./, `${index + 1}.`)

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import useKeywordScoreBadge from '../hooks/useKeywordScoreBadge';
+import useKeywordSorting from '../hooks/useKeywordSorting';
 
 interface KeywordInfo {
   keyword: string;
@@ -25,60 +26,23 @@ interface KeywordTableProps {
 }
 
 const KeywordTable: React.FC<KeywordTableProps> = ({ keywords, trendingKeywords = [] }) => {
-  const [sortField, setSortField] = useState<keyof KeywordInfo>('score');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [activeTab, setActiveTab] = useState<'analysis' | 'trending'>('analysis');
   const { getRecommendationBadge } = useKeywordScoreBadge();
-
-  // 정렬 핸들러
-  const handleSort = (field: keyof KeywordInfo) => {
-    if (field === sortField) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortDirection('desc');
-    }
-  };
-
-  // 정렬된 키워드 목록
-  const sortedKeywords = [...keywords].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    } else {
-      // 숫자 또는 다른 타입인 경우
-      return sortDirection === 'asc'
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
-    }
-  });
-
-  // 정렬된 인기 키워드 목록
-  const sortedTrendingKeywords = [...trendingKeywords].sort((a, b) => {
-    const aValue = a[sortField];
-    const bValue = b[sortField];
-
-    if (typeof aValue === 'string' && typeof bValue === 'string') {
-      return sortDirection === 'asc'
-        ? aValue.localeCompare(bValue)
-        : bValue.localeCompare(aValue);
-    } else {
-      return sortDirection === 'asc'
-        ? (aValue as number) - (bValue as number)
-        : (bValue as number) - (aValue as number);
-    }
-  });
-
-  // 정렬 방향 아이콘
-  const getSortIcon = (field: keyof KeywordInfo) => {
-    if (field !== sortField) return null;
-    return sortDirection === 'asc' ? ' ↑' : ' ↓';
-  };
-
+  
+  // 정렬 관련 로직을 훅으로 분리
+  const { 
+    sortField,
+    sortDirection, 
+    handleSort, 
+    getSortIcon, 
+    sortedItems: sortedKeywords 
+  } = useKeywordSorting<KeywordInfo>(keywords, 'score');
+  
+  // 인기 키워드에 동일한 정렬 로직 적용
+  const { 
+    sortedItems: sortedTrendingKeywords 
+  } = useKeywordSorting<TrendingKeyword>(trendingKeywords, sortField, sortDirection);
+  
   // 현재 활성화된 탭에 따라 테이블 데이터 선택
   const currentKeywords = activeTab === 'analysis' ? sortedKeywords : sortedTrendingKeywords;
 
@@ -88,7 +52,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({ keywords, trendingKeywords 
         <h2 className="text-xl font-semibold">키워드 분석</h2>
         <div className="flex space-x-2">
           <button
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
+            className={`px-4 py-2 text-sm font-medium rounded-md min-w-[140px] ${
               activeTab === 'analysis' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -98,7 +62,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({ keywords, trendingKeywords 
             키워드 분석 결과
           </button>
           <button
-            className={`px-4 py-2 text-sm font-medium rounded-md ${
+            className={`px-4 py-2 text-sm font-medium rounded-md min-w-[140px] ${
               activeTab === 'trending' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

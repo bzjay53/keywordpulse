@@ -133,11 +133,16 @@ export async function getUser() {
     
     if (userId) {
       const isAdmin = userId === DEV_ADMIN_EMAIL;
-      return { 
+      // User 타입에 맞는 최소한의 필수 필드 포함
+      return {
         id: isAdmin ? 'dev-admin-id' : 'dev-user-id',
         email: userId,
-        role: isAdmin ? 'admin' : 'user'
-      };
+        role: isAdmin ? 'admin' : 'user',
+        app_metadata: {},
+        user_metadata: {},
+        aud: 'authenticated',
+        created_at: new Date().toISOString()
+      } as unknown as User;
     }
     
     return null;

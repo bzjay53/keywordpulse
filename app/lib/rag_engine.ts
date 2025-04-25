@@ -50,7 +50,7 @@ const CATEGORY_PATTERNS = {
 };
 
 // 캐시 객체 선언 (메모이제이션용)
-const keywordCategoryCache = new Map<string, KeywordCategory>();
+const keywordCategoryCache: Map<string, KeywordCategory> = new Map<string, KeywordCategory>();
 
 /**
  * 키워드를 분석하여 적절한 카테고리로 분류합니다.

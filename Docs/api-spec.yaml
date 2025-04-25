@@ -1,0 +1,99 @@
+openapi: 3.0.0
+info:
+  title: KeywordPulse API
+  description: KeywordPulse 키워드 분석 및 RAG 시스템 API 명세
+  version: 1.0.0
+  contact:
+    email: info@libwys.com
+servers:
+  - url: https://keywordpulse.example.com
+    description: 운영 서버
+  - url: http://localhost:3000
+    description: 개발 서버
+paths:
+  /api/analyze:
+    post:
+      summary: 키워드 분석
+      description: 입력된 키워드 배열을 분석하여 마크다운 형식의 분석 결과를 반환합니다. RAG(Retrieval-Augmented Generation) 기술을 활용합니다.
+      tags:
+        - 분석
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - keywords
+              properties:
+                keywords:
+                  type: array
+                  items:
+                    type: string
+                  description: 분석할 키워드 배열 (첫 번째 키워드가 메인 키워드로 사용됨)
+                  example: ["인공지능", "머신러닝", "딥러닝"]
+            examples:
+              AI_Keywords:
+                summary: AI 관련 키워드 예시
+                value:
+                  keywords: ["인공지능", "머신러닝", "딥러닝"]
+              Marketing_Keywords:
+                summary: 마케팅 관련 키워드 예시
+                value:
+                  keywords: ["디지털 마케팅", "SEO 전략", "소셜미디어 광고"]
+      responses:
+        '200':
+          description: 성공적인 분석 결과
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  analysisText:
+                    type: string
+                    description: 마크다운 형식의 분석 결과 텍스트
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: 분석 시간
+        '400':
+          description: 잘못된 요청 (키워드 배열이 없거나 유효하지 않음)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: '분석할 키워드가 제공되지 않았습니다.'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: '분석 중 서버 오류가 발생했습니다.'
+components:
+  schemas:
+    KeywordCategory:
+      type: string
+      enum:
+        - 'AI 기술'
+        - '디지털 마케팅'
+        - '앱 개발'
+        - '3D 모델링/AI'
+        - '일반'
+      description: 키워드가 분류될 수 있는 카테고리
+    AnalysisResponse:
+      type: object
+      properties:
+        analysisText:
+          type: string
+          description: 마크다운 형식의 분석 결과 텍스트
+        timestamp:
+          type: string
+          format: date-time
+          description: 분석 시간 

@@ -37,17 +37,83 @@
 
 ---
 
-## ✨ 템플릿 기반 RAG 예시 (Python 함수형)
+## 📦 구현 구조 (2023.05.12 업데이트)
 
-```python
-def generate_analysis_text(keywords: List[Dict[str, Any]]) -> str:
-    top_keywords = sorted(keywords, key=lambda x: x['score'], reverse=True)[:5]
-    summary = ""
-    summary += f"이번 주 분석된 키워드 중 '{top_keywords[0]['keyword']}'는 가장 높은 추천 점수를 기록했습니다.\n"
-    for kw in top_keywords:
-        summary += f"- **{kw['keyword']}**: 검색량 {kw['monthlySearches']:,}회, 경쟁률 {kw['competitionRate']:.2f}, 점수 {kw['score']}점\n"
-    summary += "\n이 중에서도 80점 이상 키워드는 콘텐츠 제작 우선순위로 추천됩니다."
-    return summary
+### 모듈화된 RAG 엔진
+리팩토링을 통해 RAG 관련 로직을 외부 모듈로 분리했습니다:
+
+```ts
+// app/lib/rag_engine.ts
+export function generateKeywordAnalysis(keywords: string[]): string {
+  // 메인 키워드를 기반으로 카테고리 분류
+  const mainKeyword = keywords[0];
+  const category = categorizeKeyword(mainKeyword);
+  
+  // 카테고리별 전문 분석 함수 호출
+  switch (category) {
+    case '3D 모델링/AI': return generateModelingAnalysis(mainKeyword, keywords);
+    case 'AI 기술': return generateAIAnalysis(mainKeyword, keywords);
+    case '디지털 마케팅': return generateMarketingAnalysis(mainKeyword, keywords);
+    case '앱 개발': return generateDevelopmentAnalysis(mainKeyword, keywords);
+    default: return generateGenericAnalysis(mainKeyword, keywords);
+  }
+}
+```
+
+### 카테고리별 분석
+각 카테고리별로 전문화된 분석 함수 구현:
+
+| 카테고리 | 분석 템플릿 |
+|--------|-----------|
+| 3D 모델링/AI | 블렌더, 3D 모델링 중심 |
+| AI 기술 | LLM, 딥러닝 중심 |
+| 디지털 마케팅 | SEO, 콘텐츠 마케팅 중심 |
+| 앱 개발 | 프로그래밍, 개발 관련 중심 |
+| 일반 | 범용 템플릿 |
+
+### 로깅 및 오류 처리 통합
+```ts
+try {
+  // 분석 로직
+} catch (error) {
+  // 로깅: 분석 중 오류
+  logger.error({
+    message: 'RAG 키워드 분석 오류',
+    error: error as Error,
+    context: { keywordCount: keywords.length }
+  });
+  
+  // 에러 발생 시 기본 메시지 반환
+  return '키워드 분석 중 오류가 발생했습니다. 다시 시도해 주세요.';
+}
+```
+
+---
+
+## ✨ 템플릿 기반 RAG 예시 (TypeScript 함수형)
+
+```typescript
+function generateMarketingAnalysis(mainKeyword: string, keywords: string[]): string {
+  let analysis = `## ${mainKeyword} 키워드 분석\n\n`;
+  
+  analysis += `디지털 마케팅 분야에서 **${mainKeyword}**에 대한 트렌드를 분석한 결과, `;
+  analysis += `ROI 측정, 효과적인 전략 수립, 그리고 성공 사례에 대한 관심이 높습니다.\n\n`;
+  
+  analysis += "### 주요 인사이트\n\n";
+  
+  const topKeywords = keywords.slice(0, 3);
+  const insights = [
+    `**${topKeywords[0]}**에 대한 검색이 가장 많으며, 구체적인 성과 측정과 ROI 관련 정보에 대한 수요가 높습니다.`,
+    `${topKeywords[1]} 관련 콘텐츠는 경쟁이 적은 편으로, 구체적인 방법론과 단계별 가이드를 제공하면 경쟁 우위를 점할 수 있습니다.`,
+    `최근 6개월간 ${topKeywords[2]}에 대한 검색이 45% 증가했으며, 성공 사례와 실패 사례를 모두 다루는 콘텐츠가 주목받고 있습니다.`,
+  ];
+  
+  insights.forEach(insight => {
+    analysis += `- ${insight}\n`;
+  });
+  
+  return analysis;
+}
 ```
 
 ---
@@ -66,25 +132,40 @@ def generate_analysis_text(keywords: List[Dict[str, Any]]) -> str:
 
 ---
 
-## 📦 API 통합 위치
+## 📦 API 통합 및 프론트엔드 연동
 
-| API 경로 | 설명 |
+| 구성 요소 | 설명 |
 |----------|------|
-| `/api/analyze` | 키워드 목록 전달 → 분석 텍스트 생성 후 응답 |
-| `/api/search` | 추천 점수 포함된 키워드 데이터 추출 역할 |
-| 프론트 UI | `RagCard` 컴포넌트에서 마크다운 렌더링 |
+| `/api/analyze` | 키워드 목록 전달 → `generateKeywordAnalysis()` 호출 |
+| `/api/search` | 키워드 검색 결과 및 추천 점수 제공 |
+| `AnalysisRenderer` | 분석 결과 마크다운 렌더링 컴포넌트 |
+| `AnalysisCard` | 컨테이너 컴포넌트 (제목, 복사 기능 포함) |
+
+### 리팩토링된 프론트엔드 구조
+분석 결과를 표시하는 컴포넌트 개선:
+```jsx
+<AnalysisCard analysisText={analysisText} />
+  ↓
+<AnalysisRenderer 
+  analysisText={analysisText} 
+  maxHeight="350px"
+  className="custom-styles"
+/>
+```
 
 ---
 
 ## 🧪 테스트 전략
 - 템플릿 기반 → 단위 테스트 (문장 포함 여부, 숫자 포맷 확인)
 - GPT 기반 → 프롬프트 리턴 구조 비교 테스트 (텍스트 길이, 구성 체크)
+- 카테고리 분류 테스트 → `categorizeKeyword` 함수의 정확도 확인
 
 ---
 
 ## 🔄 유지보수 전략
-- 템플릿 방식은 점수/문장 규칙만 수정하면 리팩토링 용이
-- GPT 기반은 토큰 최적화 및 결과 캐싱 고려
+- 모듈화된 구조로 템플릿 추가/수정 용이
+- 카테고리별 템플릿을 독립적으로 관리하여 확장성 확보
+- 토큰 최적화 및 결과 캐싱 고려 (향후 LLM 기반 확장 시)
 
 ---
 
@@ -96,5 +177,5 @@ def generate_analysis_text(keywords: List[Dict[str, Any]]) -> str:
 
 ---
 
-> 이 문서는 KeywordPulse에서 사용되는 RAG 시스템의 전체 흐름과 템플릿 및 확장 가능성, 구현 방식에 대해 기술한 핵심 아키텍처 문서입니다.
+> 이 문서는 KeywordPulse에서 사용되는 RAG 시스템의 전체 흐름과 템플릿 및 확장 가능성, 구현 방식에 대해 기술한 핵심 아키텍처 문서입니다. 2023.05.12 업데이트 내용 포함.
 

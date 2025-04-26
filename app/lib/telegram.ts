@@ -521,4 +521,202 @@ export async function formatRagResultForTelegram(
     console.error('RAG 분석 텍스트 생성 중 오류:', error);
     return '<b>⚠️ 분석 생성 중 오류가 발생했습니다.</b>\n\n자세한 내용은 KeywordPulse 웹사이트를 확인하세요.';
   }
+}
+
+/**
+ * 여러 채팅 ID로 텔레그램 메시지 전송
+ * @param token 텔레그램 봇 토큰
+ * @param chatIds 텔레그램 채팅 ID 배열
+ * @param text 전송할 메시지
+ * @param options 메시지 옵션
+ * @returns 각 채팅 ID별 결과 객체
+ */
+export async function sendMessageToMultipleChats(
+  token: string,
+  chatIds: string[],
+  text: string,
+  options: TelegramMessageOptions = {}
+): Promise<{ [chatId: string]: any }> {
+  if (!chatIds || !Array.isArray(chatIds) || chatIds.length === 0) {
+    throw new Error('유효한 채팅 ID 배열이 필요합니다.');
+  }
+
+  const defaultOptions: TelegramMessageOptions = {
+    parse_mode: 'HTML',
+    disable_web_page_preview: false,
+    disable_notification: false,
+  };
+
+  const messageOptions = { ...defaultOptions, ...options };
+  const results: { [chatId: string]: any } = {};
+  const errors: { [chatId: string]: any } = {};
+
+  // 모든 채팅 ID에 병렬로 메시지 전송
+  const sendPromises = chatIds.map(async (chatId) => {
+    try {
+      const result = await sendTelegramMessage(token, {
+        chat_id: chatId,
+        text,
+        parse_mode: messageOptions.parse_mode,
+        disable_web_page_preview: messageOptions.disable_web_page_preview,
+        disable_notification: messageOptions.disable_notification,
+      });
+      return { chatId, result, success: true };
+    } catch (error) {
+      console.error(`채팅 ID ${chatId}로 메시지 전송 실패:`, error);
+      return { 
+        chatId, 
+        error: error instanceof Error ? error.message : '알 수 없는 오류', 
+        success: false 
+      };
+    }
+  });
+
+  const sendResults = await Promise.all(sendPromises);
+  
+  // 결과 정리
+  sendResults.forEach(({ chatId, result, error, success }) => {
+    if (success) {
+      results[chatId] = result;
+    } else {
+      errors[chatId] = error;
+    }
+  });
+
+  return {
+    results,
+    errors,
+    summary: {
+      total: chatIds.length,
+      success: Object.keys(results).length,
+      failed: Object.keys(errors).length
+    }
+  };
+}
+
+/**
+ * 여러 채팅 ID로 긴 텔레그램 메시지 전송
+ * 메시지가 텔레그램 제한(4096자)을 초과할 경우 사용
+ * @param token 텔레그램 봇 토큰
+ * @param chatIds 텔레그램 채팅 ID 배열
+ * @param text 전송할 메시지
+ * @param options 메시지 옵션
+ * @returns 각 채팅 ID별 결과 객체
+ */
+export async function sendLongMessageToMultipleChats(
+  token: string,
+  chatIds: string[],
+  text: string,
+  options: TelegramMessageOptions = {}
+): Promise<{ [chatId: string]: any }> {
+  if (!chatIds || !Array.isArray(chatIds) || chatIds.length === 0) {
+    throw new Error('유효한 채팅 ID 배열이 필요합니다.');
+  }
+
+  const results: { [chatId: string]: any } = {};
+  const errors: { [chatId: string]: any } = {};
+
+  // 각 채팅 ID에 순차적으로 메시지 전송 (속도 제한 방지)
+  for (const chatId of chatIds) {
+    try {
+      const result = await sendLongMessage(token, chatId, text, options);
+      results[chatId] = result;
+    } catch (error) {
+      console.error(`채팅 ID ${chatId}로 긴 메시지 전송 실패:`, error);
+      errors[chatId] = error instanceof Error ? error.message : '알 수 없는 오류';
+    }
+    
+    // 다음 채팅 ID로 전송하기 전에 잠시 대기 (속도 제한 방지)
+    if (chatIds.indexOf(chatId) < chatIds.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  return {
+    results,
+    errors,
+    summary: {
+      total: chatIds.length,
+      success: Object.keys(results).length,
+      failed: Object.keys(errors).length
+    }
+  };
+}
+
+/**
+ * 텔레그램 채팅 ID 형식 유효성 검사
+ * @param chatId 검사할 텔레그램 채팅 ID
+ * @returns 유효성 검사 결과 (boolean)
+ */
+export function isValidTelegramChatId(chatId: string): boolean {
+  // 채팅 ID는 숫자여야 함 (개인 채팅은 양수, 그룹 채팅은 음수)
+  if (!chatId || chatId.trim() === '') {
+    return false;
+  }
+  
+  // @username 형식 (채널/그룹 사용자 이름)도 유효함
+  if (chatId.startsWith('@')) {
+    // @으로 시작하고 최소 5자 이상 (@+최소 4자 이상의 사용자명)
+    return chatId.length >= 5 && /^@[a-zA-Z0-9_]{4,}$/.test(chatId);
+  }
+  
+  // 숫자 형식 검사 (-100으로 시작하는 채널 ID 포함)
+  return /^-?[0-9]+$/.test(chatId);
+}
+
+/**
+ * 텔레그램 채팅 ID의 유효성을 API 호출을 통해 실제로 검증
+ * @param token 텔레그램 봇 토큰
+ * @param chatId 검사할 텔레그램 채팅 ID
+ * @returns 검증 결과 객체 (유효 여부 및 메시지)
+ */
+export async function validateTelegramChatId(
+  token: string,
+  chatId: string
+): Promise<{ valid: boolean; message: string }> {
+  // 기본 형식 검사
+  if (!isValidTelegramChatId(chatId)) {
+    return {
+      valid: false,
+      message: '유효하지 않은 채팅 ID 형식입니다. 숫자 또는 @username 형식이어야 합니다.'
+    };
+  }
+  
+  try {
+    // 실제 API 호출로 확인
+    const response = await fetch(getTelegramApiUrl(token, 'getChat'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId
+      }),
+    });
+    
+    const result = await response.json();
+    
+    if (result.ok) {
+      const chatType = result.result.type;
+      return {
+        valid: true,
+        message: `유효한 채팅 ID입니다. 채팅 유형: ${
+          chatType === 'private' ? '개인' :
+          chatType === 'group' ? '그룹' : 
+          chatType === 'supergroup' ? '슈퍼그룹' : 
+          chatType === 'channel' ? '채널' : chatType
+        }`
+      };
+    } else {
+      return {
+        valid: false,
+        message: `채팅 ID 검증 실패: ${result.description || '알 수 없는 오류'}`
+      };
+    }
+  } catch (error) {
+    return {
+      valid: false,
+      message: `채팅 ID 검증 중 오류 발생: ${error instanceof Error ? error.message : '알 수 없는 오류'}`
+    };
+  }
 } 

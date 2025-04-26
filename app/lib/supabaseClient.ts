@@ -348,6 +348,14 @@ export function incrementSearchCount() {
   localStorage.setItem(LOCAL_STORAGE_KEYS.LAST_SEARCH_TIME, new Date().toISOString());
 }
 
+// 검색 제한 초기화 (로그인 시 사용)
+export function resetSearchLimit() {
+  if (typeof window === 'undefined') return;
+  
+  localStorage.setItem(LOCAL_STORAGE_KEYS.SEARCH_COUNT, '0');
+  localStorage.setItem(LOCAL_STORAGE_KEYS.HAS_WATCHED_AD, 'true');
+}
+
 // 광고 시청 후 검색 가능 상태로 변경
 export function setAdWatched() {
   if (typeof window === 'undefined') return;

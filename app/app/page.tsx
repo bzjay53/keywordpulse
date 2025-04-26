@@ -83,27 +83,36 @@ export default function Home() {
 
   // 검색 제한 확인
   useEffect(() => {
+    // 로그인된 사용자는 검색 제한을 적용하지 않음
+    if (user) {
+      setSearchLimitReached(false);
+      return;
+    }
+    
     const canSearch = trackSearchUsage();
     setSearchLimitReached(!canSearch);
-  }, []);
+  }, [user]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!keyword.trim()) return;
     
-    // 검색 제한 확인
-    const canSearch = trackSearchUsage();
-    
-    if (!canSearch) {
-      // 광고를 이미 시청했는지 확인
-      if (hasWatchedAd()) {
-        alert('오늘의 검색 한도를 모두 사용했습니다. 내일 다시 시도하거나 회원가입 후 이용해주세요.');
-        return;
-      } else {
-        // 광고 시청 모달 표시
-        setShowAdModal(true);
-        return;
+    // 로그인된 사용자는 검색 제한을 적용하지 않음
+    if (!user) {
+      // 검색 제한 확인
+      const canSearch = trackSearchUsage();
+      
+      if (!canSearch) {
+        // 광고를 이미 시청했는지 확인
+        if (hasWatchedAd()) {
+          alert('오늘의 검색 한도를 모두 사용했습니다. 내일 다시 시도하거나 회원가입 후 이용해주세요.');
+          return;
+        } else {
+          // 광고 시청 모달 표시
+          setShowAdModal(true);
+          return;
+        }
       }
     }
     
@@ -112,8 +121,10 @@ export default function Home() {
     setAnalysisText('');
     
     try {
-      // 검색 카운트 증가
-      incrementSearchCount();
+      // 비로그인 사용자만 검색 카운트 증가
+      if (!user) {
+        incrementSearchCount();
+      }
       
       // 1. 키워드 검색 API 호출
       const searchResponse = await fetch('/api/search', {
@@ -150,9 +161,11 @@ export default function Home() {
         setAnalysisText(analyzeData.analysisText);
       }
       
-      // 검색 후 검색 제한 갱신
-      const canSearchAgain = trackSearchUsage();
-      setSearchLimitReached(!canSearchAgain);
+      // 검색 후 검색 제한 갱신 (로그인 사용자는 제외)
+      if (!user) {
+        const canSearchAgain = trackSearchUsage();
+        setSearchLimitReached(!canSearchAgain);
+      }
       
     } catch (error) {
       console.error('검색 및 분석 중 오류 발생:', error);
@@ -215,7 +228,7 @@ export default function Home() {
             <button
               type="submit"
               className="btn btn-primary py-2 px-4 text-center whitespace-nowrap min-w-[120px]"
-              disabled={isLoading || showAdModal || searchLimitReached}
+              disabled={isLoading || showAdModal || (!user && searchLimitReached)}
             >
               {isLoading ? '검색 중...' : '키워드 분석'}
             </button>

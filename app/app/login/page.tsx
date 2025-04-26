@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn, signUp } from '@/lib/supabaseClient';
+import { signIn, signUp, resetSearchLimit } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 
 export default function LoginPage() {
@@ -87,6 +87,9 @@ export default function LoginPage() {
         }
         
         console.log('로그인 성공:', data);
+        
+        // 로그인 성공 시 검색 제한 초기화
+        resetSearchLimit();
         
         // 세션 갱신
         await refreshSession();

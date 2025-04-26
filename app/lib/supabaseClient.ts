@@ -60,7 +60,46 @@ export const LOCAL_STORAGE_KEYS = {
   CURRENT_USER: 'kp_current_user'
 };
 
+// 마지막 요청 시간을 추적하기 위한 변수
+let lastAuthRequestTime = 0;
+
+// 요청 사이의 최소 지연 시간 (밀리초)
+const MIN_AUTH_REQUEST_DELAY = 3000; // 3초
+
+/**
+ * 인증 요청 간의 최소 지연 시간을 확인하는 함수
+ * @returns 요청을 보낼 수 있으면 true, 아직 기다려야 하면 false
+ */
+function canMakeAuthRequest(): { canProceed: boolean; remainingTime: number } {
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastAuthRequestTime;
+  const remainingTime = Math.max(0, MIN_AUTH_REQUEST_DELAY - timeSinceLastRequest);
+  
+  return {
+    canProceed: timeSinceLastRequest >= MIN_AUTH_REQUEST_DELAY,
+    remainingTime
+  };
+}
+
+/**
+ * 인증 요청 시간을 업데이트하는 함수
+ */
+function updateAuthRequestTime() {
+  lastAuthRequestTime = Date.now();
+}
+
 export async function signUp(email: string, password: string) {
+  // 요청 제한 확인
+  const { canProceed, remainingTime } = canMakeAuthRequest();
+  if (!canProceed) {
+    return {
+      data: null,
+      error: { 
+        message: `너무 빠른 요청입니다. ${Math.ceil(remainingTime / 1000)}초 후에 다시 시도해주세요.` 
+      }
+    };
+  }
+  
   if (!hasSupabaseCredentials()) {
     console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
@@ -108,6 +147,9 @@ export async function signUp(email: string, password: string) {
       resetSearchLimit();
     }
     
+    // 인증 요청 시간 업데이트
+    updateAuthRequestTime();
+    
     return { 
       data: { 
         user: { 
@@ -126,6 +168,9 @@ export async function signUp(email: string, password: string) {
   
   try {
     console.log('[회원가입 시도]', { email });
+    
+    // 인증 요청 시간 업데이트
+    updateAuthRequestTime();
     
     // 실제 환경에서 회원가입 호출
     const result = await supabase.auth.signUp({
@@ -156,6 +201,11 @@ export async function signUp(email: string, password: string) {
         return {
           data: null,
           error: { message: '비밀번호는 최소 6자 이상이어야 합니다.' }
+        };
+      } else if (result.error.message.includes('security purposes') || result.error.message.includes('rate limit')) {
+        return {
+          data: null,
+          error: { message: '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.' }
         };
       }
       
@@ -194,6 +244,17 @@ export async function signUp(email: string, password: string) {
 }
 
 export async function signIn(email: string, password: string) {
+  // 요청 제한 확인
+  const { canProceed, remainingTime } = canMakeAuthRequest();
+  if (!canProceed) {
+    return {
+      data: null,
+      error: { 
+        message: `너무 빠른 요청입니다. ${Math.ceil(remainingTime / 1000)}초 후에 다시 시도해주세요.` 
+      }
+    };
+  }
+  
   if (!hasSupabaseCredentials()) {
     console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
@@ -214,6 +275,9 @@ export async function signIn(email: string, password: string) {
       
       // 검색 제한 초기화
       resetSearchLimit();
+      
+      // 인증 요청 시간 업데이트
+      updateAuthRequestTime();
       
       return { 
         data: { 
@@ -242,6 +306,9 @@ export async function signIn(email: string, password: string) {
       // 검색 제한 초기화
       resetSearchLimit();
       
+      // 인증 요청 시간 업데이트
+      updateAuthRequestTime();
+      
       return { 
         data: { 
           user: { email, id: user.id, role: 'user' },
@@ -269,6 +336,9 @@ export async function signIn(email: string, password: string) {
   
   try {
     console.log('[로그인 시도]', { email });
+    
+    // 인증 요청 시간 업데이트
+    updateAuthRequestTime();
     
     // 실제 환경에서 로그인 호출
     const result = await supabase.auth.signInWithPassword({
@@ -309,6 +379,11 @@ export async function signIn(email: string, password: string) {
         return {
           data: null,
           error: { message: '로그인 정보가 올바르지 않습니다. 이메일과 비밀번호를 확인해주세요.' }
+        };
+      } else if (result.error.message.includes('security purposes') || result.error.message.includes('rate limit')) {
+        return {
+          data: null,
+          error: { message: '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.' }
         };
       } else {
         // 기타 오류

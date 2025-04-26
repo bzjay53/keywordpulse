@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendTelegramMessage, formatRagResultForTelegram } from '@/lib/telegram';
 import { KeywordData } from '@/lib/rag-integration';
+import { ApiError } from '@/lib/exceptions';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,18 +22,16 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     // 필수 파라미터 확인
-    if (!token || !chat_id) {
-      return NextResponse.json(
-        { error: '필수 파라미터가 누락되었습니다. (token, chat_id)' },
-        { status: 400 }
-      );
+    if (!token) {
+      throw new ApiError(400, '텔레그램 봇 토큰이 필요합니다.');
+    }
+
+    if (!chat_id) {
+      throw new ApiError(400, '텔레그램 채팅 ID가 필요합니다.');
     }
 
     if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
-      return NextResponse.json(
-        { error: '분석할 키워드 데이터가 없습니다.' },
-        { status: 400 }
-      );
+      throw new ApiError(400, '분석할 키워드 데이터가 없습니다.');
     }
 
     // 키워드 데이터 유효성 검사
@@ -51,10 +50,7 @@ export async function POST(request: NextRequest) {
       }));
 
     if (validKeywords.length === 0) {
-      return NextResponse.json(
-        { error: '유효한 키워드 데이터가 없습니다.' },
-        { status: 400 }
-      );
+      throw new ApiError(400, '유효한 키워드 데이터가 없습니다.');
     }
 
     // RAG 시스템을 사용하여 분석 결과 텍스트 생성
@@ -65,25 +61,16 @@ export async function POST(request: NextRequest) {
       includeStats: true
     });
 
-    // 텔레그램 API 호출
-    const telegramResult = await sendTelegramMessage(token, {
-      chat_id: chat_id,
-      text: ragMessage,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true
-    });
-
-    // 텔레그램 API 응답 확인
-    if (!telegramResult.ok) {
-      console.error('텔레그램 API 오류:', telegramResult);
-      return NextResponse.json(
-        { 
-          error: `텔레그램 API 오류: ${telegramResult.description || '알 수 없는 오류'}`,
-          details: telegramResult
-        },
-        { status: 500 }
-      );
-    }
+    // 텔레그램으로 메시지 전송
+    const result = await sendTelegramMessage(
+      token,
+      {
+        chat_id,
+        text: ragMessage,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true
+      }
+    );
 
     // 성공 응답
     return NextResponse.json({
@@ -91,16 +78,25 @@ export async function POST(request: NextRequest) {
       message: 'RAG 분석 결과가 성공적으로 전송되었습니다.',
       keywordCount: validKeywords.length,
       templateType,
-      details: {
-        message_id: telegramResult.result?.message_id,
-        date: telegramResult.result?.date
-      }
+      data: result
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('RAG 분석 결과 전송 중 오류 발생:', error);
+    
+    let status = 500;
+    let errorMessage = '분석 결과 전송 중 오류가 발생했습니다.';
+    
+    if (error instanceof ApiError) {
+      status = error.statusCode;
+      errorMessage = error.message;
+    }
+    
     return NextResponse.json(
-      { error: '분석 결과 전송 중 오류가 발생했습니다.' },
-      { status: 500 }
+      { 
+        success: false, 
+        message: errorMessage 
+      }, 
+      { status }
     );
   }
 } 

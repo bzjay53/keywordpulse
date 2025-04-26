@@ -8,15 +8,8 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // SignUp 함수의 반환 타입 정의
 export type SignUpResponse = {
   data: { 
-    user: { 
-      email: string; 
-      id: string; 
-      role: string;
-    } | null;
-    session: { 
-      access_token: string; 
-      expires_at: number;
-    } | null;
+    user: any; // User 타입 호환성을 위해 any로 변경
+    session: any; // Session 타입 호환성을 위해 any로 변경
   } | null;
   error: { 
     message: string 
@@ -241,18 +234,18 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
         return {
           data: result.data,
           error: null
-        };
+        } as SignUpResponse;
       } else {
         // 세션이 없으면 이메일 확인 필요
         return {
           data: result.data,
           error: null,
           message: '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.'
-        };
+        } as SignUpResponse;
       }
     }
     
-    return result;
+    return result as SignUpResponse;
   } catch (error: any) {
     console.error('[회원가입 오류]', error);
     return {

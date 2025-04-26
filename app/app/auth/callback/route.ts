@@ -1,6 +1,5 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,38 +12,25 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
 
   if (code) {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: any) {
-            try {
-              cookieStore.set({ name, value, ...options });
-            } catch (error) {
-              // 쿠키 설정 오류 무시
-            }
-          },
-          remove(name: string, options: any) {
-            try {
-              cookieStore.set({ name, value: '', ...options });
-            } catch (error) {
-              // 쿠키 삭제 오류 무시
-            }
-          },
-        },
+    try {
+      // Supabase 인증 코드 교환
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) {
+        console.error('인증 오류:', error.message);
+        return NextResponse.redirect(
+          new URL('/login?error=auth_session_error', requestUrl.origin)
+        );
       }
-    );
-    
-    // Supabase 인증 코드 교환
-    await supabase.auth.exchangeCodeForSession(code);
-    
-    // 홈페이지로 리다이렉트
-    return NextResponse.redirect(new URL('/', requestUrl.origin));
+      
+      // 홈페이지로 리다이렉트
+      return NextResponse.redirect(new URL('/', requestUrl.origin));
+    } catch (error) {
+      console.error('예기치 않은 오류:', error);
+      return NextResponse.redirect(
+        new URL('/login?error=auth_unexpected_error', requestUrl.origin)
+      );
+    }
   }
 
   // 오류 발생 시 로그인 페이지로 리다이렉트 (에러 메시지 포함)

@@ -5,6 +5,25 @@ import type { User } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// SignUp 함수의 반환 타입 정의
+export type SignUpResponse = {
+  data: { 
+    user: { 
+      email: string; 
+      id: string; 
+      role: string;
+    } | null;
+    session: { 
+      access_token: string; 
+      expires_at: number;
+    } | null;
+  } | null;
+  error: { 
+    message: string 
+  } | null;
+  message?: string;
+}
+
 // 환경 변수 설정 여부 확인을 위한 함수
 export function hasSupabaseCredentials(): boolean {
   if (typeof window === 'undefined') return false;
@@ -88,7 +107,7 @@ function updateAuthRequestTime() {
   lastAuthRequestTime = Date.now();
 }
 
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string): Promise<SignUpResponse> {
   // 요청 제한 확인
   const { canProceed, remainingTime } = canMakeAuthRequest();
   if (!canProceed) {

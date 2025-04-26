@@ -14,6 +14,10 @@ export default function LoginPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [envWarning, setEnvWarning] = useState<boolean>(false);
+  const [validationErrors, setValidationErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const router = useRouter();
   const { user, refreshSession } = useAuth();
 
@@ -33,28 +37,53 @@ export default function LoginPage() {
   useEffect(() => {
     setError(null);
     setSuccess(null);
+    setValidationErrors({});
   }, [mode]);
+
+  // 입력값 유효성 검사
+  const validateInputs = () => {
+    const errors: {
+      email?: string;
+      password?: string;
+    } = {};
+    
+    // 이메일 형식 검사
+    if (!email.trim()) {
+      errors.email = '이메일을 입력해주세요.';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = '유효한 이메일 형식이 아닙니다.';
+    }
+    
+    // 비밀번호 검사
+    if (!password.trim()) {
+      errors.password = '비밀번호를 입력해주세요.';
+    } else if (mode === 'signup' && password.length < 6) {
+      errors.password = '비밀번호는 최소 6자 이상이어야 합니다.';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    
+    // 입력값 유효성 검사
+    if (!validateInputs()) {
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      if (!email.trim() || !password.trim()) {
-        throw new Error('이메일과 비밀번호를 입력해주세요.');
-      }
-
       if (mode === 'login') {
         // Supabase 로그인 실행
         const { data, error: signInError } = await signIn(email, password);
         
         if (signInError) {
-          if (signInError.message.includes('Invalid login credentials')) {
-            throw new Error('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
-          }
-          throw new Error(`로그인 오류: ${signInError.message}`);
+          throw new Error(signInError.message);
         }
         
         console.log('로그인 성공:', data);
@@ -69,10 +98,7 @@ export default function LoginPage() {
         const { data, error: signUpError } = await signUp(email, password);
         
         if (signUpError) {
-          if (signUpError.message.includes('already')) {
-            throw new Error('이미 가입된 이메일입니다. 로그인을 시도해주세요.');
-          }
-          throw new Error('회원가입에 실패했습니다: ' + signUpError.message);
+          throw new Error(signUpError.message);
         }
         
         console.log('회원가입 성공:', data);
@@ -97,17 +123,22 @@ export default function LoginPage() {
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
           <p className="font-bold">환경 변수 설정 필요</p>
           <p>Supabase 환경 변수가 설정되지 않았습니다. 로그인 기능이 동작하지 않을 수 있습니다.</p>
+          <p className="mt-1 text-sm">
+            <strong>개발 모드:</strong> admin@example.com / admin123으로 로그인할 수 있습니다.
+          </p>
         </div>
       )}
       
       {error && (
         <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+          <p className="font-bold">오류 발생</p>
           <p>{error}</p>
         </div>
       )}
       
       {success && (
         <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
+          <p className="font-bold">성공</p>
           <p>{success}</p>
         </div>
       )}
@@ -119,11 +150,16 @@ export default function LoginPage() {
             id="email"
             type="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setValidationErrors({...validationErrors, email: undefined});
+            }}
+            className={`w-full px-3 py-2 border ${validationErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
             placeholder="your@email.com"
-            required
           />
+          {validationErrors.email && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+          )}
         </div>
         
         <div>
@@ -132,11 +168,19 @@ export default function LoginPage() {
             id="password"
             type="password"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setValidationErrors({...validationErrors, password: undefined});
+            }}
+            className={`w-full px-3 py-2 border ${validationErrors.password ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
             placeholder="********"
-            required
           />
+          {validationErrors.password && (
+            <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+          )}
+          {mode === 'signup' && (
+            <p className="mt-1 text-xs text-gray-500">비밀번호는 최소 6자 이상이어야 합니다.</p>
+          )}
         </div>
         
         <button

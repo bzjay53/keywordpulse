@@ -214,7 +214,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="btn btn-primary py-2 px-4 text-center font-medium"
+              className="btn btn-primary py-2 px-4 text-center whitespace-nowrap min-w-[120px]"
               disabled={isLoading || showAdModal || searchLimitReached}
             >
               {isLoading ? '검색 중...' : '키워드 분석'}

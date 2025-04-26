@@ -63,6 +63,14 @@ export async function signUp(email: string, password: string) {
       };
     }
     
+    // 비밀번호 유효성 검사 추가
+    if (password.length < 6) {
+      return {
+        data: null,
+        error: { message: '비밀번호는 최소 6자 이상이어야 합니다.' }
+      };
+    }
+    
     // 새 사용자 생성 및 저장
     const newUser = { 
       email, 
@@ -81,10 +89,38 @@ export async function signUp(email: string, password: string) {
     };
   }
   
-  return supabase.auth.signUp({
-    email,
-    password,
-  });
+  try {
+    const result = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+    
+    if (result.error) {
+      // 오류 메시지 개선
+      if (result.error.message.includes('already')) {
+        return {
+          data: null,
+          error: { message: '이미 가입된 이메일입니다. 로그인을 시도해주세요.' }
+        };
+      } else if (result.error.message.includes('password')) {
+        return {
+          data: null,
+          error: { message: '비밀번호는 최소 6자 이상이어야 합니다.' }
+        };
+      }
+    }
+    
+    return result;
+  } catch (error: any) {
+    console.error('회원가입 중 오류 발생:', error);
+    return {
+      data: null,
+      error: { message: '회원가입 중 오류가 발생했습니다. 나중에 다시 시도해주세요.' }
+    };
+  }
 }
 
 export async function signIn(email: string, password: string) {
@@ -139,26 +175,52 @@ export async function signIn(email: string, password: string) {
       };
     }
     
+    // 이메일 존재 여부 확인하여 다른 오류 메시지 제공
+    const emailExists = DEV_USERS.some((user: DevUser) => user.email === email);
+    
+    if (emailExists) {
+      return { 
+        data: null, 
+        error: { message: '비밀번호가 일치하지 않습니다. 다시 확인해주세요.' } 
+      };
+    }
+    
     return { 
       data: null, 
-      error: { message: '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.' } 
+      error: { message: '등록되지 않은 이메일입니다. 회원가입을 먼저 진행해주세요.' } 
     };
   }
   
-  const result = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const result = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    // 이메일 미확인 오류 처리
+    if (result.error) {
+      if (result.error.message === 'Email not confirmed') {
+        return {
+          data: null,
+          error: { message: '이메일 인증이 완료되지 않았습니다. 이메일을 확인하여 인증을 완료해주세요.' }
+        };
+      } else if (result.error.message.includes('Invalid login credentials')) {
+        // admin API를 사용하지 않고 더 명확한 오류 메시지 제공
+        return {
+          data: null,
+          error: { message: '로그인 정보가 올바르지 않습니다. 이메일과 비밀번호를 확인해주세요.' }
+        };
+      }
+    }
   
-  // 이메일 미확인 오류 처리
-  if (result.error && result.error.message === 'Email not confirmed') {
+    return result;
+  } catch (error: any) {
+    console.error('로그인 중 오류 발생:', error);
     return {
       data: null,
-      error: { message: '이메일 인증이 완료되지 않았습니다. 이메일을 확인하여 인증을 완료해주세요.' }
+      error: { message: '로그인 중 오류가 발생했습니다. 나중에 다시 시도해주세요.' }
     };
   }
-  
-  return result;
 }
 
 export async function signOut() {

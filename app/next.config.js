@@ -22,7 +22,6 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    legacyBrowsers: false,
   },
   // 빌드 중에 상태 파일 생성을 제한하여 스택 오버플로우 방지
   webpack: (config, { isServer }) => {

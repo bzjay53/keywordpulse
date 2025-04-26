@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { sendTelegramMessage, formatMessageAsHTML } from '@/lib/telegram';
 
 /**
  * Telegram으로 분석 결과를 전송하는 API 엔드포인트
@@ -27,27 +28,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // 마크다운을 HTML로 변환 (선택 사항)
+    const formattedText = body.format === 'markdown' 
+      ? formatMessageAsHTML(body.analysisText)
+      : body.analysisText;
+    
     // Telegram API에 요청 전송
-    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: body.analysisText,
-        parse_mode: 'Markdown'
-      }),
+    const result = await sendTelegramMessage(botToken, {
+      chat_id: chatId,
+      text: formattedText,
+      parse_mode: body.format === 'markdown' ? 'HTML' : (body.parseMode || 'HTML'),
+      disable_web_page_preview: body.disablePreview
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Telegram API 오류: ${response.status} - ${JSON.stringify(errorData)}`);
+    if (!result.ok) {
+      throw new Error(`Telegram API 오류: ${result.description || '알 수 없는 오류'}`);
     }
     
-    const data = await response.json();
-    const messageId = data.result?.message_id?.toString() || '';
+    const messageId = result.result?.message_id?.toString() || '';
     
     // 성공 응답 반환
     return NextResponse.json({

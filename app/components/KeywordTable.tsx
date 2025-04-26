@@ -52,7 +52,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({ keywords, trendingKeywords 
         <h2 className="text-xl font-semibold">키워드 분석</h2>
         <div className="flex space-x-2">
           <button
-            className={`px-4 py-2 text-sm font-medium rounded-md min-w-[140px] ${
+            className={`px-6 py-2 text-sm font-medium rounded-md min-w-[160px] text-center ${
               activeTab === 'analysis' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -62,7 +62,7 @@ const KeywordTable: React.FC<KeywordTableProps> = ({ keywords, trendingKeywords 
             키워드 분석 결과
           </button>
           <button
-            className={`px-4 py-2 text-sm font-medium rounded-md min-w-[140px] ${
+            className={`px-6 py-2 text-sm font-medium rounded-md min-w-[160px] text-center ${
               activeTab === 'trending' 
                 ? 'bg-blue-500 text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

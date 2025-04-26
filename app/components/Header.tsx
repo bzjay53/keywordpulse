@@ -43,8 +43,9 @@ export default function Header() {
           {/* 데스크톱 네비게이션 */}
           <div className="hidden md:ml-6 md:flex md:items-center md:space-x-4">
             <Link href="/" className="px-3 py-2 text-gray-600 hover:text-primary-600">홈</Link>
-            <Link href="/pricing" className="px-3 py-2 text-gray-600 hover:text-primary-600">가격</Link>
-            <Link href="/docs" className="px-3 py-2 text-gray-600 hover:text-primary-600">문서</Link>
+            {/* 임시로 숨김 - 아직 페이지가 준비되지 않음 */}
+            {/* <Link href="/pricing" className="px-3 py-2 text-gray-600 hover:text-primary-600">가격</Link> */}
+            {/* <Link href="/docs" className="px-3 py-2 text-gray-600 hover:text-primary-600">문서</Link> */}
             
             {isLoading ? (
               <div className="w-24 h-9 bg-gray-200 animate-pulse rounded-md"></div>
@@ -110,12 +111,13 @@ export default function Header() {
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50">
               홈
             </Link>
-            <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50">
+            {/* 임시로 숨김 - 아직 페이지가 준비되지 않음 */}
+            {/* <Link href="/pricing" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50">
               가격
             </Link>
             <Link href="/docs" onClick={() => setIsMenuOpen(false)} className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-primary-600 hover:bg-gray-50">
               문서
-            </Link>
+            </Link> */}
             
             {!isLoading && (
               <>

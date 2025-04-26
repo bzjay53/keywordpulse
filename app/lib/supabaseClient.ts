@@ -184,12 +184,15 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
     // 인증 요청 시간 업데이트
     updateAuthRequestTime();
     
+    // 현재 사이트 URL 가져오기
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://keywordpulse.vercel.app';
+    
     // 실제 환경에서 회원가입 호출
     const result = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${baseUrl}/auth/callback`,
         data: {
           role: 'user'
         }

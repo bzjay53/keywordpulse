@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getTrendingKeywords, TrendCategory } from '@/lib/trends_api';
 import logger from '@/lib/logger';
 
+// 동적 렌더링 설정 추가
+export const dynamic = 'force-dynamic';
+
 /**
  * 트렌딩 키워드 API 엔드포인트
  * GET: 인기 트렌딩 키워드를 가져옵니다.

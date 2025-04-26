@@ -145,10 +145,20 @@ export async function signIn(email: string, password: string) {
     };
   }
   
-  return supabase.auth.signInWithPassword({
+  const result = await supabase.auth.signInWithPassword({
     email,
     password,
   });
+  
+  // 이메일 미확인 오류 처리
+  if (result.error && result.error.message === 'Email not confirmed') {
+    return {
+      data: null,
+      error: { message: '이메일 인증이 완료되지 않았습니다. 이메일을 확인하여 인증을 완료해주세요.' }
+    };
+  }
+  
+  return result;
 }
 
 export async function signOut() {

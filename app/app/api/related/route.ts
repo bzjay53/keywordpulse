@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getRelatedKeywords } from '@/lib/trends_api';
 import logger from '@/lib/logger';
 
+// 동적 렌더링 설정 추가
+export const dynamic = 'force-dynamic';
+
 /**
  * 관련 키워드 API 엔드포인트
  * GET: 특정 키워드와 관련된 추천 키워드 목록을 가져옵니다.

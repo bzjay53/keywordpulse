@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getKeywordTrend } from '@/lib/trends_api';
 import logger from '@/lib/logger';
 
+// 동적 렌더링 설정 추가
+export const dynamic = 'force-dynamic';
+
 /**
  * 키워드 트렌드 API 엔드포인트
  * GET: 특정 키워드의 시간에 따른 검색 트렌드 데이터를 가져옵니다.

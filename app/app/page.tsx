@@ -27,6 +27,45 @@ const TRENDING_KEYWORDS = [
   { keyword: '디지털 마케팅', count: 175 }
 ];
 
+// 인기 키워드 데이터 (실시간 데이터 연동 전 임시 데이터)
+const TRENDING_KEYWORDS_DATA = [
+  {
+    keyword: 'AI 마케팅',
+    monthlySearches: 42500,
+    competitionRate: 0.31,
+    score: 92,
+    recommendation: '강력 추천'
+  },
+  {
+    keyword: '콘텐츠 전략',
+    monthlySearches: 38200,
+    competitionRate: 0.25,
+    score: 87,
+    recommendation: '강력 추천'
+  },
+  {
+    keyword: 'SNS 광고',
+    monthlySearches: 31400,
+    competitionRate: 0.42,
+    score: 76,
+    recommendation: '추천'
+  },
+  {
+    keyword: '이커머스 트렌드',
+    monthlySearches: 28600,
+    competitionRate: 0.38,
+    score: 72,
+    recommendation: '추천'
+  },
+  {
+    keyword: '디지털 마케팅',
+    monthlySearches: 45700,
+    competitionRate: 0.51,
+    score: 68,
+    recommendation: '추천'
+  }
+];
+
 // 메타데이터는 클라이언트 컴포넌트에서 직접 export할 수 없으므로 제거
 // metadata.ts 파일에서 별도로 관리됩니다
 
@@ -175,7 +214,7 @@ export default function Home() {
             />
             <button
               type="submit"
-              className="btn btn-primary py-3 min-w-20 whitespace-nowrap"
+              className="btn btn-primary py-2 px-4 text-center font-medium"
               disabled={isLoading || showAdModal || searchLimitReached}
             >
               {isLoading ? '검색 중...' : '키워드 분석'}
@@ -219,7 +258,10 @@ export default function Home() {
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* 키워드 테이블 */}
             <div className="lg:col-span-2">
-              <KeywordTable keywords={searchResults} />
+              <KeywordTable 
+                keywords={searchResults} 
+                trendingKeywords={TRENDING_KEYWORDS_DATA}
+              />
             </div>
             
             {/* 분석 및 액션 카드 */}
@@ -255,6 +297,14 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+            </section>
+            
+            {/* 키워드 테이블 (메인 페이지에 직접 표시) */}
+            <section className="mx-auto max-w-4xl w-full">
+              <KeywordTable 
+                keywords={[]} 
+                trendingKeywords={TRENDING_KEYWORDS_DATA}
+              />
             </section>
             
             {/* 광고 배너 */}

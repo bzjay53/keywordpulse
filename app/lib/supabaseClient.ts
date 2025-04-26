@@ -82,20 +82,46 @@ export async function signUp(email: string, password: string) {
     
     const updatedUsers = [...DEV_USERS, newUser];
     saveDevUsers(updatedUsers);
+
+    // 개발 모드에서는 즉시 로그인 상태로 설정
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.USER_ID, email);
+      localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_USER, JSON.stringify({
+        email,
+        id: newUser.id,
+        role: 'user',
+        created_at: newUser.created_at
+      }));
+    }
     
     return { 
-      data: { user: { email, id: newUser.id, role: 'user' } }, 
+      data: { 
+        user: { email, id: newUser.id, role: 'user' },
+        session: { access_token: 'mock-token', expires_at: Date.now() + 24 * 60 * 60 * 1000 }
+      }, 
       error: null 
     };
   }
   
   try {
+    console.log('[회원가입 시도]', { email });
+    
+    // 실제 환경에서 회원가입 호출
     const result = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        data: {
+          role: 'user'
+        }
       }
+    });
+    
+    console.log('[회원가입 결과]', {
+      success: !result.error,
+      errorMessage: result.error?.message,
+      user: result.data?.user ? 'exists' : 'none'
     });
     
     if (result.error) {
@@ -111,11 +137,17 @@ export async function signUp(email: string, password: string) {
           error: { message: '비밀번호는 최소 6자 이상이어야 합니다.' }
         };
       }
+    } else {
+      // 회원가입 성공 메시지 제공
+      return {
+        data: result.data,
+        error: null
+      };
     }
     
     return result;
   } catch (error: any) {
-    console.error('회원가입 중 오류 발생:', error);
+    console.error('[회원가입 오류]', error);
     return {
       data: null,
       error: { message: '회원가입 중 오류가 발생했습니다. 나중에 다시 시도해주세요.' }
@@ -142,6 +174,9 @@ export async function signIn(email: string, password: string) {
         localStorage.setItem(LOCAL_STORAGE_KEYS.CURRENT_USER, JSON.stringify(adminUser));
       }
       
+      // 검색 제한 초기화
+      resetSearchLimit();
+      
       return { 
         data: { 
           user: { email, id: 'dev-admin-id', role: 'admin' },
@@ -165,6 +200,9 @@ export async function signIn(email: string, password: string) {
           created_at: user.created_at
         }));
       }
+      
+      // 검색 제한 초기화
+      resetSearchLimit();
       
       return { 
         data: { 
@@ -192,30 +230,57 @@ export async function signIn(email: string, password: string) {
   }
   
   try {
+    console.log('[로그인 시도]', { email });
+    
+    // 실제 환경에서 로그인 호출
     const result = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
+    });
+    
+    console.log('[로그인 결과]', {
+      success: !result.error,
+      errorMessage: result.error?.message,
+      session: result.data?.session ? 'exists' : 'none'
     });
     
     // 이메일 미확인 오류 처리
     if (result.error) {
       if (result.error.message === 'Email not confirmed') {
+        // 이메일 재전송 시도
+        const { error: resendError } = await supabase.auth.resend({
+          type: 'signup',
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`
+          }
+        });
+        
+        if (resendError) {
+          console.error('[이메일 재전송 오류]', resendError);
+        } else {
+          console.log('[이메일 재전송 성공]', { email });
+        }
+        
         return {
           data: null,
-          error: { message: '이메일 인증이 완료되지 않았습니다. 이메일을 확인하여 인증을 완료해주세요.' }
+          error: { message: '이메일 인증이 완료되지 않았습니다. 인증 이메일을 재전송했으니 확인해주세요.' }
         };
       } else if (result.error.message.includes('Invalid login credentials')) {
-        // admin API를 사용하지 않고 더 명확한 오류 메시지 제공
+        // 로그인 정보 오류
         return {
           data: null,
           error: { message: '로그인 정보가 올바르지 않습니다. 이메일과 비밀번호를 확인해주세요.' }
         };
       }
+    } else if (result.data?.session) {
+      // 로그인 성공 시 검색 제한 초기화
+      resetSearchLimit();
     }
   
     return result;
   } catch (error: any) {
-    console.error('로그인 중 오류 발생:', error);
+    console.error('[로그인 오류]', error);
     return {
       data: null,
       error: { message: '로그인 중 오류가 발생했습니다. 나중에 다시 시도해주세요.' }

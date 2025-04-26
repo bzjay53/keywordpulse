@@ -21,8 +21,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { user, refreshSession } = useAuth();
 
-  // 이미 로그인된 경우 홈으로 리다이렉트
+  // URL 파라미터 처리
   useEffect(() => {
+    // URL 파라미터 확인
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get('error');
+    
+    if (errorParam === 'auth_callback_error') {
+      setError('인증 과정에서 오류가 발생했습니다. 다시 시도해주세요.');
+    }
+    
+    // 이미 로그인된 경우 홈으로 리다이렉트
     if (user) {
       router.push('/');
     }
@@ -105,8 +114,22 @@ export default function LoginPage() {
         }
         
         console.log('회원가입 성공:', data);
-        setSuccess('회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화한 후 로그인해주세요.');
-        setMode('login');
+        
+        // 이미 로그인 상태가 되었는지 확인
+        if (data?.session) {
+          // 개발 모드에서는 즉시 로그인 상태가 됨
+          setSuccess('회원가입이 완료되었습니다! 홈 페이지로 이동합니다.');
+          // 세션 갱신
+          await refreshSession();
+          // 잠시 후 홈으로 리다이렉트
+          setTimeout(() => {
+            router.push('/');
+          }, 2000);
+        } else {
+          // 실제 환경에서는 이메일 확인 필요
+          setSuccess('회원가입이 완료되었습니다! 이메일을 확인하여 계정을 활성화한 후 로그인해주세요.');
+          setMode('login');
+        }
       }
     } catch (err: any) {
       console.error('인증 오류:', err);

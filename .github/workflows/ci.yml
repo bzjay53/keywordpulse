@@ -90,11 +90,13 @@ jobs:
         coverage html
     
     - name: Archive code coverage results
+      if: success()
       uses: actions/upload-artifact@v3
       with:
         name: code-coverage-report
         path: htmlcov
         retention-days: 5
+        if-no-files-found: ignore
     
     - name: Build Next.js app
       run: |

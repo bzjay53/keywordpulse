@@ -5,6 +5,17 @@ import type { User } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// 환경 변수 설정 여부 확인을 위한 함수
+export function hasSupabaseCredentials(): boolean {
+  if (typeof window === 'undefined') return false;
+  
+  // 런타임에 환경 변수를 확인하여 실제로 값이 있는지 확인
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+}
+
+// 개발 환경 여부 확인
+export const isDevelopment = process.env.NODE_ENV === 'development';
+
 // 환경 변수 미설정 시 개발 모드에서 사용할 기본 어드민 계정
 export const DEV_ADMIN_EMAIL = 'admin@example.com';
 export const DEV_ADMIN_PASSWORD = 'admin123';
@@ -50,8 +61,8 @@ export const LOCAL_STORAGE_KEYS = {
 };
 
 export async function signUp(email: string, password: string) {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
+  if (!hasSupabaseCredentials()) {
+    console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
     // 개발 모드: 이미 가입된 이메일인지 확인
     const existingUser = DEV_USERS.find((user: DevUser) => user.email === email);
@@ -92,12 +103,22 @@ export async function signUp(email: string, password: string) {
         role: 'user',
         created_at: newUser.created_at
       }));
+      
+      // 검색 제한 초기화
+      resetSearchLimit();
     }
     
     return { 
       data: { 
-        user: { email, id: newUser.id, role: 'user' },
-        session: { access_token: 'mock-token', expires_at: Date.now() + 24 * 60 * 60 * 1000 }
+        user: { 
+          email, 
+          id: newUser.id, 
+          role: 'user' 
+        },
+        session: { 
+          access_token: 'mock-token', 
+          expires_at: Date.now() + 24 * 60 * 60 * 1000 
+        }
       }, 
       error: null 
     };
@@ -137,12 +158,29 @@ export async function signUp(email: string, password: string) {
           error: { message: '비밀번호는 최소 6자 이상이어야 합니다.' }
         };
       }
-    } else {
-      // 회원가입 성공 메시지 제공
+      
+      // 기타 오류 메시지 처리
       return {
-        data: result.data,
-        error: null
+        data: null,
+        error: { message: `회원가입 오류: ${result.error.message}` }
       };
+    } else if (result.data?.user) {
+      // 회원가입 성공
+      if (result.data.session) {
+        // 세션이 있으면 로그인 상태 → 개발 모드 또는 이메일 확인 없이 자동 로그인되는 설정
+        resetSearchLimit();
+        return {
+          data: result.data,
+          error: null
+        };
+      } else {
+        // 세션이 없으면 이메일 확인 필요
+        return {
+          data: result.data,
+          error: null,
+          message: '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.'
+        };
+      }
     }
     
     return result;
@@ -156,8 +194,8 @@ export async function signUp(email: string, password: string) {
 }
 
 export async function signIn(email: string, password: string) {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
+  if (!hasSupabaseCredentials()) {
+    console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
     // 개발 모드에서 관리자 계정으로 로그인 허용
     if (email === DEV_ADMIN_EMAIL && password === DEV_ADMIN_PASSWORD) {
@@ -272,13 +310,24 @@ export async function signIn(email: string, password: string) {
           data: null,
           error: { message: '로그인 정보가 올바르지 않습니다. 이메일과 비밀번호를 확인해주세요.' }
         };
+      } else {
+        // 기타 오류
+        return {
+          data: null,
+          error: { message: `로그인 오류: ${result.error.message}` }
+        };
       }
     } else if (result.data?.session) {
       // 로그인 성공 시 검색 제한 초기화
       resetSearchLimit();
+      return result;
+    } else {
+      // 세션이 없는 경우 (비정상적인 상황)
+      return {
+        data: null,
+        error: { message: '로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.' }
+      };
     }
-  
-    return result;
   } catch (error: any) {
     console.error('[로그인 오류]', error);
     return {
@@ -417,8 +466,13 @@ export function incrementSearchCount() {
 export function resetSearchLimit() {
   if (typeof window === 'undefined') return;
   
-  localStorage.setItem(LOCAL_STORAGE_KEYS.SEARCH_COUNT, '0');
-  localStorage.setItem(LOCAL_STORAGE_KEYS.HAS_WATCHED_AD, 'true');
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEYS.SEARCH_COUNT, '0');
+    localStorage.setItem(LOCAL_STORAGE_KEYS.HAS_WATCHED_AD, 'true');
+    console.log('[검색 제한 초기화 완료]');
+  } catch (error) {
+    console.error('[검색 제한 초기화 오류]', error);
+  }
 }
 
 // 광고 시청 후 검색 가능 상태로 변경

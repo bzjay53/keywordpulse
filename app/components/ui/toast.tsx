@@ -3,107 +3,63 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-const ToastContext = React.createContext<{
-  toasts: { id: string; title: string; description: string; variant: "default" | "destructive" }[]
-  addToast: (toast: { title: string; description: string; variant?: "default" | "destructive" }) => void
-  removeToast: (id: string) => void
-}>({
-  toasts: [],
-  addToast: () => {},
-  removeToast: () => {},
-})
+export interface ToastProps {
+  title?: string;
+  description?: string;
+  variant?: 'default' | 'destructive';
+  duration?: number;
+  onClose?: () => void;
+}
+
+interface ToastContextType {
+  toast: (props: ToastProps) => void;
+}
+
+const ToastContext = React.createContext<ToastContextType>({
+  toast: () => null,
+});
+
+export function useToast() {
+  const context = React.useContext(ToastContext);
+  if (!context) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = React.useState<
-    { id: string; title: string; description: string; variant: "default" | "destructive" }[]
-  >([])
+  const [toasts, setToasts] = React.useState<(ToastProps & { id: string })[]>([]);
 
-  const addToast = React.useCallback(
-    ({ title, description, variant = "default" }: { title: string; description: string; variant?: "default" | "destructive" }) => {
-      const id = Math.random().toString(36).substring(2, 9)
-      setToasts((prev) => [...prev, { id, title, description, variant }])
+  const toast = React.useCallback((props: ToastProps) => {
+    const id = String(Math.random());
+    const newToast = { id, ...props };
+    setToasts((prev) => [...prev, newToast]);
 
-      // Auto remove after 5 seconds
+    if (props.duration !== 0) {
       setTimeout(() => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id))
-      }, 5000)
-    },
-    []
-  )
-
-  const removeToast = React.useCallback((id: string) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id))
-  }, [])
+        setToasts((prev) => prev.filter((t) => t.id !== id));
+        props.onClose?.();
+      }, props.duration || 5000);
+    }
+  }, []);
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast }}>
+    <ToastContext.Provider value={{ toast }}>
       {children}
-      <div className="fixed bottom-0 right-0 z-50 p-4 space-y-4 w-full max-w-md">
-        {toasts.map((toast) => (
+      <div className="fixed bottom-0 right-0 z-50 p-4 space-y-4">
+        {toasts.map((t) => (
           <div
-            key={toast.id}
+            key={t.id}
             className={cn(
-              "rounded-lg p-4 shadow-lg transition-all animate-in slide-in-from-right-full",
-              toast.variant === "destructive" 
-                ? "bg-red-500 text-white" 
-                : "bg-white border border-gray-200"
+              'p-4 rounded-md shadow-lg max-w-md transform transition-all',
+              t.variant === 'destructive' ? 'bg-red-600 text-white' : 'bg-white text-gray-900 border border-gray-200'
             )}
           >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className={cn(
-                  "font-medium text-sm",
-                  toast.variant === "destructive" ? "text-white" : "text-gray-900"
-                )}>
-                  {toast.title}
-                </h3>
-                <p className={cn(
-                  "text-sm",
-                  toast.variant === "destructive" ? "text-white opacity-90" : "text-gray-500"
-                )}>
-                  {toast.description}
-                </p>
-              </div>
-              <button
-                onClick={() => removeToast(toast.id)}
-                className={cn(
-                  "ml-4 inline-flex h-6 w-6 items-center justify-center rounded-md",
-                  toast.variant === "destructive" 
-                    ? "text-white hover:bg-red-600 focus:ring-red-400" 
-                    : "text-gray-500 hover:bg-gray-100"
-                )}
-              >
-                <span className="sr-only">닫기</span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
+            {t.title && <div className="font-medium">{t.title}</div>}
+            {t.description && <div className="text-sm mt-1">{t.description}</div>}
           </div>
         ))}
       </div>
     </ToastContext.Provider>
-  )
-}
-
-export const useToast = () => {
-  const context = React.useContext(ToastContext)
-  if (context === undefined) {
-    throw new Error("useToast must be used within a ToastProvider")
-  }
-  return {
-    toast: context.addToast,
-    dismiss: context.removeToast,
-  }
+  );
 } 

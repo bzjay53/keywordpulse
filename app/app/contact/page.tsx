@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from '../../lib/AuthContext';
 
 export default function ContactPage() {
   const { user } = useAuth();

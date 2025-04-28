@@ -48,14 +48,16 @@ KeywordPulse 프로젝트의 전반적인 디버깅 전략, 환경 설정, 문�
   - 디렉토리 구조 불일치
   - 삭제된 파일 참조
   - Vercel 배포와 로컬 개발 환경의 경로 차이
+  - 중첩된 디렉토리 구조(`app/app/`)와 상대/절대 경로 혼용 문제
 - **해결방법**:
   - `tsconfig.json`에서 경로 별칭 설정 확인 (paths 설정)
   - 루트 레이아웃(`app/layout.tsx`) 존재 여부 확인
   - Next.js 캐시 클리어: `.next` 디렉토리 삭제 후 다시 빌드
-  - import 경로 수정: 상대 경로 → 절대 경로(`@/`) 변경 고려
+  - import 경로 수정: 절대 경로(`@/`)에서 상대 경로로 변경 고려
+  - 중첩된 디렉토리 구조(`app/app/`)에서는 상대 경로(`../../lib/file`)로 변경
   - 프로젝트 구조와 파일 위치 재검토 및 조정
   - 훅과 컴포넌트 경로 일관성 확보: 중복된 위치의 파일 통합
-  - **최근 개선**: 훅 파일을 루트 디렉토리의 hooks 폴더로 복사하고 모든 import를 절대 경로로 통일
+  - **최근 개선**: 훅 파일을 루트 디렉토리의 hooks 폴더로 복사하고 모든 import를 상대 경로로 통일
 
 ---
 
@@ -164,19 +166,40 @@ Next.js 프로젝트에서는 `@/` 경로 별칭이 `tsconfig.json`에 설정된
    
    // 변경 후 (정확한 경로 지정)
    import { signIn } from '@/app/lib/supabaseClient';
+   
+   // 또는 상대 경로 사용 (권장)
+   import { signIn } from '../../lib/supabaseClient';
    ```
 
 3. **디렉토리 구조 확인**
 
    중첩된 app 디렉토리(`app/app/`)가 있는 경우 import 경로에 주의해야 합니다.
-
-4. **절대 경로 사용**
-
-   문제가 지속되는 경우 상대 경로를 사용할 수 있습니다:
    
-   ```typescript
-   import { signIn } from '../../lib/supabaseClient';
    ```
+   - app/
+     - page.tsx (import from './components/ComponentName')
+     - components/
+       - ComponentName.tsx
+     - app/
+       - login/
+         - page.tsx (import from '../../lib/supabaseClient')
+       - lib/
+         - supabaseClient.ts
+   ```
+
+4. **파일 복사 및 일관성 유지**
+
+   중첩 구조가 필요한 경우 동일한 파일을 두 위치에 유지하고 상대 경로를 사용합니다.
+   
+   ```
+   app/lib/supabaseClient.ts
+   app/app/lib/supabaseClient.ts (동일한 내용)
+   ```
+
+5. **Vercel 배포 환경 고려**
+
+   Vercel 배포 환경과 로컬 개발 환경의 차이를 고려하여 경로 설정을 일관되게 유지합니다.
+   배포 전 `next build` 명령어로 로컬에서 먼저 빌드를 테스트하는 것을 권장합니다.
 
 ---
 
@@ -252,15 +275,28 @@ Module not found: Can't resolve '@/lib/supabaseClient'
 
 3. **import 경로 수정**
 
-   배포 환경에서 문제가 발생하는 경우, 명시적인 경로를 사용합니다:
+   배포 환경에서 문제가 발생하는 경우, 상대 경로를 사용합니다:
    
    ```typescript
+   // 변경 전
    import { signIn } from '@/app/lib/supabaseClient';
+   
+   // 변경 후
+   import { signIn } from '../../lib/supabaseClient';
    ```
 
 4. **파일 위치 확인**
 
    파일이 예상된 위치에 있는지 확인합니다. 중첩된 구조(`app/app/*`)가 혼동을 일으킬 수 있습니다.
+
+5. **실제 사례 해결 방법**
+
+   최근 경로 문제를 해결하기 위해 다음과 같은 조치를 취했습니다:
+   
+   - `tsconfig.json`의 경로를 루트 기준으로 변경: `"@/*": ["./*"]`
+   - 중첩된 앱 디렉토리(`app/app/`)에 필요한 모듈 파일을 복사
+   - 모든 import를 상대 경로로 변경
+   - 로컬에서 `next build` 테스트 후 배포
 
 ---
 

@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import KeywordTable from '@/app/components/KeywordTable';
-import AnalysisCard from '@/app/components/AnalysisCard';
-import ActionButtons from '@/app/components/ActionButtons';
+import KeywordTable from './components/KeywordTable';
+import AnalysisCard from './components/AnalysisCard';
+import ActionButtons from './components/ActionButtons';
 
 export default function Page() {
   return (

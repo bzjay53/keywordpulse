@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn, signUp, resetSearchLimit } from '@/app/lib/supabaseClient';
-import { useAuth } from '@/app/lib/AuthContext';
+import { signIn, signUp, resetSearchLimit } from '../../lib/supabaseClient';
+import { useAuth } from '../../lib/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');

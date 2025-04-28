@@ -11,6 +11,14 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
 
+  // 개발 모드 체크 - URL에 dev=true가 있으면 개발 모드로 간주
+  const isDev = requestUrl.searchParams.get('dev') === 'true';
+  
+  // 개발 모드에서는 코드 검증을 생략하고 바로 로그인 처리
+  if (isDev) {
+    return NextResponse.redirect(new URL('/?dev_login=true', requestUrl.origin));
+  }
+
   if (code) {
     try {
       // Supabase 인증 코드 교환

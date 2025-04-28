@@ -126,3 +126,169 @@ try {
 | API (Python) | 검색/분석/sync/notify 응답 시간, 오류율 |
 | UI (Next.js) | 검색 흐름, 오류 메시지 출력 유무 |
 | 외부 API | 호출 실패율, 응답 딜레이, 예외 응답 코드 분석 |
+
+## 모듈 경로 오류
+
+### 증상
+
+다음과 같은 오류 메시지가 표시됩니다:
+
+```
+Module not found: Can't resolve '@/lib/supabaseClient'
+Module not found: Can't resolve '@/components/KeywordTable'
+```
+
+### 원인
+
+Next.js 프로젝트에서는 `@/` 경로 별칭이 `tsconfig.json`에 설정된 경로에 따라 결정됩니다. 경로가 잘못 설정되었거나, 중첩된 디렉토리 구조로 인해 혼동이 발생할 수 있습니다.
+
+### 해결책
+
+1. **tsconfig.json 경로 설정 확인**
+
+   ```json
+   {
+     "compilerOptions": {
+       "paths": {
+         "@/*": ["./*"]  // 루트 디렉토리 기준
+       }
+     }
+   }
+   ```
+
+2. **import 경로 수정**
+
+   ```typescript
+   // 변경 전
+   import { signIn } from '@/lib/supabaseClient';
+   
+   // 변경 후 (정확한 경로 지정)
+   import { signIn } from '@/app/lib/supabaseClient';
+   ```
+
+3. **디렉토리 구조 확인**
+
+   중첩된 app 디렉토리(`app/app/`)가 있는 경우 import 경로에 주의해야 합니다.
+
+4. **절대 경로 사용**
+
+   문제가 지속되는 경우 상대 경로를 사용할 수 있습니다:
+   
+   ```typescript
+   import { signIn } from '../../lib/supabaseClient';
+   ```
+
+---
+
+## 인증 관련 오류
+
+### 증상
+
+로그인 또는 회원가입 시 다음과 같은 오류가 발생합니다:
+
+1. "유효하지 않은 인증 정보입니다."
+2. "인증 세션 생성 중 오류가 발생했습니다."
+
+### 원인
+
+1. Supabase 환경 변수가 설정되지 않았거나 잘못되었습니다.
+2. AuthContext와 supabaseClient 간의 불일치가 있습니다.
+
+### 해결책
+
+1. **환경 변수 확인**
+
+   `.env.local` 파일에 다음 변수가 올바르게 설정되어 있는지 확인합니다:
+   
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+2. **AuthContext 구조 확인**
+
+   `AuthContext.tsx`와 `supabaseClient.ts` 파일이 일관되게 설정되어 있는지 확인합니다.
+
+---
+
+## API 호출 오류
+
+// ... 이전 내용 유지 ...
+
+---
+
+## Vercel 배포 오류
+
+### 증상
+
+Vercel에 배포 시 다음과 같은 빌드 오류가 발생합니다:
+
+```
+Failed to compile.
+Module not found: Can't resolve '@/lib/supabaseClient'
+```
+
+### 원인
+
+로컬 개발 환경과 Vercel 빌드 환경에서 경로 설정이 다를 수 있습니다.
+
+### 해결책
+
+1. **tsconfig.json의 경로 설정 확인**
+
+   ```json
+   {
+     "compilerOptions": {
+       "paths": {
+         "@/*": ["./*"]  // 루트 디렉토리 기준으로 설정
+       }
+     }
+   }
+   ```
+
+2. **Next.js 설정 확인**
+
+   `next.config.js`의 설정이 경로와 관련된 문제를 일으키지 않는지 확인합니다.
+
+3. **import 경로 수정**
+
+   배포 환경에서 문제가 발생하는 경우, 명시적인 경로를 사용합니다:
+   
+   ```typescript
+   import { signIn } from '@/app/lib/supabaseClient';
+   ```
+
+4. **파일 위치 확인**
+
+   파일이 예상된 위치에 있는지 확인합니다. 중첩된 구조(`app/app/*`)가 혼동을 일으킬 수 있습니다.
+
+---
+
+## 추가 디버깅 팁
+
+1. **Next.js 캐시 초기화**
+   
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+
+2. **의존성 재설치**
+   
+   ```bash
+   npm ci
+   ```
+
+3. **환경 변수 확인**
+   
+   ```bash
+   npx next env
+   ```
+
+4. **전체 프로젝트 구조 검토**
+
+   [Architecture.md](./Architecture.md) 문서를 참조하여 파일이 올바른 위치에 있는지 확인합니다.
+
+5. **경로와 모듈 의존성 검토**
+
+   [Dependencies.md](./Dependencies.md) 문서를 참조하여 모듈 간 의존성을 확인합니다.

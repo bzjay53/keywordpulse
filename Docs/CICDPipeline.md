@@ -1,187 +1,308 @@
-# CI/CD 파이프라인 문서
+# KeywordPulse CI/CD 파이프라인 문서
 
-이 문서는 KeywordPulse 프로젝트의 CI/CD(지속적 통합/지속적 배포) 파이프라인 구성 및 작업 흐름을 설명합니다.
+이 문서는 KeywordPulse 프로젝트의 CI/CD(지속적 통합/지속적 배포) 파이프라인 구성과 workflow에 대한 정보를 제공합니다.
 
 ## 1. CI/CD 개요
 
-KeywordPulse 프로젝트는 GitHub Actions와 Vercel을 활용하여 완전 자동화된 CI/CD 파이프라인을 구축했습니다. 이 파이프라인은 다음과 같은 장점을 제공합니다:
+### 1.1 아키텍처
 
-- 코드 품질 및 테스트 자동화
-- 일관된 빌드 및 배포 프로세스
-- 빠른 피드백 루프
-- 안정적인 배포 및 롤백 기능
-
-## 2. 파이프라인 구성
-
-### 2.1 CI 파이프라인 (GitHub Actions)
+KeywordPulse 프로젝트는 다음과 같은 CI/CD 파이프라인을 사용합니다:
 
 ```mermaid
 graph TD
-    A[코드 푸시/PR] --> B[의존성 설치]
-    B --> C[코드 린팅]
-    C --> D[단위 테스트]
-    D --> E[통합 테스트]
-    E --> F[빌드 검증]
-    F --> G[코드 커버리지 분석]
-    G --> H[아티팩트 생성]
+    A[코드 변경] --> B[GitHub Repository]
+    B --> C[GitHub Actions CI]
+    C --> D{테스트 통과?}
+    D -->|Yes| E[Vercel Preview Deploy]
+    D -->|No| F[개발자에게 알림]
+    E --> G{PR 승인?}
+    G -->|Yes| H[Vercel Production Deploy]
+    G -->|No| I[피드백 및 수정]
+    I --> B
 ```
 
-### 2.2 CD 파이프라인 (Vercel)
+### 1.2 사용 도구
 
-```mermaid
-graph TD
-    A[CI 통과] --> B[Vercel 배포 트리거]
-    B --> C[프리뷰 배포 (PR)]
-    B --> D[프로덕션 배포 (main 브랜치)]
-    C --> E[배포 검증]
-    D --> E
-    E --> F[배포 성공 알림]
+- **GitHub Actions**: CI/CD 워크플로우 관리
+- **Vercel**: 정적 사이트 호스팅 및 배포
+- **Jest**: 자동화된 테스트
+- **ESLint**: 코드 품질 검사
+- **TypeScript**: 타입 검사
+
+## 2. GitHub Actions Workflow
+
+### 2.1 기본 워크플로우
+
+KeywordPulse 프로젝트는 다음 GitHub Actions 워크플로우를 사용합니다:
+
+**.github/workflows/ci.yml**:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: TypeScript type checking
+      run: npm run type-check
+    
+    - name: Run tests
+      run: npm test
+      
+    - name: Build
+      run: npm run build
 ```
 
-## 3. GitHub Actions 워크플로우
+### 2.2 Pull Request 워크플로우
 
-프로젝트의 CI 워크플로우는 `.github/workflows/ci.yml` 파일에 정의되어 있습니다.
+PR에 특화된 워크플로우를 구성하여, PR이 병합 가능한지 검증합니다:
 
-### 3.1 주요 작업 단계
+**.github/workflows/pr.yml**:
 
-1. **코드 체크아웃**: 저장소 코드 가져오기
-2. **환경 설정**: Node.js 및 Python 설정
-3. **의존성 설치**: npm 및 pip 의존성 설치
-4. **린팅**: ESLint 및 Prettier를 사용한 코드 품질 검사
-5. **테스트**: Jest 및 pytest를 사용한 자동 테스트 실행
-6. **커버리지 보고서**: 테스트 커버리지 측정 및 보고서 생성
-7. **빌드 검증**: Next.js 앱 빌드 검증
+```yaml
+name: Pull Request
 
-### 3.2 워크플로우 트리거
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
-다음 이벤트가 워크플로우를 트리거합니다:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check dependencies for vulnerabilities
+      run: npm audit --production
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Run tests with coverage
+      run: npm test -- --coverage
+    
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+```
 
-- **push**: main 브랜치에 코드 푸시
-- **pull_request**: 모든 브랜치에서 main 브랜치로의 PR
+## 3. Vercel 배포
 
-## 4. Vercel 배포 구성
+### 3.1 Vercel 구성
 
-KeywordPulse는 Vercel의 Git 통합 기능을 활용하여 CD를 구현합니다.
+Vercel은 GitHub 저장소와 직접 통합되어 자동 배포를 처리합니다. 다음과 같이 구성됩니다:
 
-### 4.1 배포 설정
-
-- **프로덕션 배포**: main 브랜치에 병합 시 자동 배포
-- **프리뷰 배포**: PR 생성 시 자동 배포 (검토용)
-- **배포 환경 변수**: Vercel 대시보드에서 관리
-
-### 4.2 배포 구성 파일
-
-프로젝트 루트의 `vercel.json` 파일에 배포 설정이 정의되어 있습니다:
+**vercel.json**:
 
 ```json
 {
   "version": 2,
+  "functions": {
+    "api/*.py": {
+      "runtime": "python3.10",
+      "maxDuration": 30
+    }
+  },
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/next"
+      "src": "api/*.py",
+      "use": "@vercel/python"
     },
     {
-      "src": "api/**/*.py",
-      "use": "@vercel/python"
+      "src": "package.json",
+      "use": "@vercel/static-build"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/api/main.py"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/$1"
+      "dest": "/out/$1"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
+  "installCommand": "npm install",
+  "buildCommand": "npm run build-static",
+  "outputDirectory": "out",
+  "github": {
+    "enabled": true,
+    "silent": false
   }
 }
 ```
 
-## 5. 환경 변수 관리
+### 3.2 정적 내보내기 프로세스
 
-### 5.1 환경 별 변수 관리
+Next.js 정적 내보내기(Static Export)는 Vercel에서 다음 단계를 통해 처리됩니다:
 
-- **개발 환경**: `.env.local` 파일
-- **CI 환경**: GitHub Actions Secrets
-- **프로덕션 환경**: Vercel 환경 변수
+1. **npm run build-static**: 정적 내보내기 커스텀 스크립트 실행
+2. **정적 파일 생성**: HTML, CSS, JS 파일이 `out` 디렉토리에 생성
+3. **정적 파일 배포**: Vercel의 글로벌 CDN에 파일 배포
 
-### 5.2 중요 환경 변수
+`build.js`를 통해 TypeScript 오류를 우회하여 빌드를 성공적으로 완료합니다.
 
-- `NEXT_PUBLIC_SUPABASE_URL`: Supabase URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase 익명 키
-- `API_SECRET_KEY`: API 보안 키
-- `VERCEL_TOKEN`: Vercel 배포 토큰
+## 4. 환경 구성
 
-## 6. 배포 전략
+### 4.1 환경별 변수 관리
 
-### 6.1 브랜치 전략
+환경 변수는 다음과 같이 관리됩니다:
 
-- **main**: 프로덕션 코드, 직접 푸시 금지
-- **develop**: 개발 브랜치, 기능 브랜치 병합
-- **feature/***:  기능 개발 브랜치
-- **bugfix/***:  버그 수정 브랜치
-- **hotfix/***:  긴급 픽스 브랜치
+| 환경 | 관리 방법 |
+|-----|----------|
+| 로컬 개발 | `.env.local` |
+| 테스트 | GitHub Secrets + Actions |
+| 스테이징 | Vercel 환경 변수 (Preview) |
+| 프로덕션 | Vercel 환경 변수 (Production) |
 
-### 6.2 릴리스 프로세스
+### 4.2 비밀 관리
 
-1. 개발자가 기능 브랜치에서 작업
-2. PR을 develop 브랜치로 요청
-3. 코드 리뷰 및 CI 검증 통과 후 develop에 병합
-4. develop에서 main으로 릴리스 PR 생성
-5. 릴리스 PR 승인 및 병합
-6. Vercel이 자동으로 프로덕션 배포
+비밀 값(API 키, 토큰 등)은 다음과 같이 관리합니다:
 
-### 6.3 롤백 절차
+- **GitHub Secrets**: CI/CD 파이프라인에서 사용되는 비밀
+- **Vercel 환경 변수**: 배포 환경에서 사용되는 비밀
 
-1. Vercel 대시보드에서 이전 배포로 롤백
-2. 필요한 경우 main 브랜치에 revert 커밋 푸시
+## 5. 배포 전략
 
-## 7. 모니터링 및 알림
+### 5.1 배포 흐름
 
-### 7.1 배포 알림
+KeywordPulse는 다음과 같은 배포 전략을 사용합니다:
 
-- GitHub 이메일 알림
-- Vercel 배포 알림
-- Slack 통합 (선택 사항)
+1. **Feature Branch**: 새 기능 개발을 위한 브랜치 생성
+2. **PR & Preview**: PR 생성 시 Vercel은 자동으로 프리뷰 환경 배포
+3. **리뷰 및 테스트**: 코드 리뷰 및 프리뷰 환경에서 수동 테스트
+4. **병합**: 승인 후 메인 브랜치에 병합
+5. **자동 배포**: 메인 브랜치 업데이트 시 자동으로 프로덕션 배포
 
-### 7.2 오류 모니터링
+### 5.2 Rollback 전략
 
-- Vercel 로그 및 알림
-- Sentry 통합 오류 추적
-- 사용자 행동 분석 (선택 사항)
+문제 발생 시 롤백 방법:
 
-## 8. 성능 최적화
+1. **Vercel Dashboard**: 이전 배포로 롤백
+2. **Git Revert**: 문제의 커밋을 되돌리고 새 배포 트리거
 
-### 8.1 빌드 최적화
+## 6. 모니터링 및 알림
 
-- **캐싱**: GitHub Actions의 의존성 캐싱
-- **병렬 작업**: 독립적인 작업 병렬 실행
+### 6.1 배포 알림
 
-### 8.2 배포 최적화
+배포 상태 알림 채널:
 
-- **증분 정적 재생성**: Next.js ISR 활용
-- **에지 캐싱**: Vercel 에지 네트워크 활용
-- **이미지 최적화**: Next.js Image 컴포넌트 사용
+- **GitHub**: 워크플로우 실행 결과 저장
+- **Slack**: 중요 배포 이벤트 알림 (성공/실패)
+- **이메일**: 크리티컬 실패에 대한 알림
 
-## 9. 보안 고려사항
+### 6.2 오류 모니터링
 
-- PR 병합 전 코드 리뷰 필수
-- 환경 변수와 시크릿 안전하게 관리
-- 의존성 취약점 검사 자동화
-- 정기적인 보안 감사
+프로덕션 환경의 오류는 다음을 통해 모니터링합니다:
 
-## 10. 개선 계획
+- **Sentry**: 클라이언트 및 서버 오류 추적
+- **Vercel Analytics**: 사용자 경험 및 성능 모니터링
 
-- **E2E 테스트 추가**: Cypress 통합
-- **성능 테스트 추가**: Lighthouse CI 통합
-- **국제화 배포 파이프라인**: 다중 언어/지역 지원
-- **A/B 테스트**: 다양한 버전 동시 배포 및 테스트
+## 7. CI/CD 성능 최적화
+
+### 7.1 빌드 최적화
+
+빌드 시간을 줄이기 위한 전략:
+
+- **캐싱**: npm 및 Next.js 빌드 캐시 활용
+- **병렬 작업**: 가능한 경우 CI 작업 병렬화
+- **선택적 재빌드**: 변경된 파일에만 영향을 미치는 테스트 실행
+
+### 7.2 테스트 최적화
+
+CI에서 테스트 실행 최적화:
+
+- **선택적 테스트**: 변경된 코드에 관련된 테스트만 실행
+- **타임아웃 설정**: 장시간 실행되는 테스트 방지
+- **테스트 분할**: 큰 테스트 세트를 여러 작업으로 분할
+
+## 8. 보안 검사
+
+### 8.1 자동화된 보안 검사
+
+CI 파이프라인에 포함된 보안 검사:
+
+- **npm audit**: 의존성 취약점 검사
+- **CodeQL**: 코드 품질 및 보안 분석
+- **SAST(Static Application Security Testing)**: 정적 애플리케이션 보안 테스트
+
+### 8.2 의존성 업데이트
+
+의존성 최신화를 위한 워크플로우:
+
+- **Dependabot**: 의존성 자동 업데이트 PR 생성
+- **주간 의존성 검토**: 팀이 보안 업데이트 검토 및 승인
+
+## 9. 백업 및 복구
+
+### 9.1 데이터 백업 전략
+
+- **Supabase 자동 백업**: 데이터베이스 일일 백업
+- **코드 저장소**: GitHub 및 추가 원격 저장소 백업
+
+### 9.2 재해 복구 계획
+
+서비스 중단 시 복구 단계:
+
+1. **원인 분석**: 장애 원인 파악
+2. **롤백 결정**: 필요 시 이전 버전으로 롤백
+3. **데이터 복구**: 필요 시 백업에서 데이터 복원
+4. **재배포**: 수정된 코드 배포
+
+## 10. 문서화 및 교육
+
+### 10.1 문서화
+
+CI/CD 파이프라인의 문서화 위치:
+
+- **GitHub Wiki**: 파이프라인 개요 및 구성 방법
+- **Docs 폴더**: 상세 설정 및 운영 가이드
+- **README.md**: 기본 설정 및 개발 흐름
+
+### 10.2 온보딩
+
+새 팀원 온보딩 프로세스:
+
+1. 저장소 접근 권한 부여
+2. CI/CD 파이프라인 개요 교육
+3. 첫 PR을 통한 실습
 
 ---
 
-이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다. 
+이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
+
+최종 업데이트: 2023-05-04 

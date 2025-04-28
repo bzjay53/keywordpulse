@@ -6,10 +6,11 @@
 
 | 문서 | 설명 | 주요 독자 | 최신 업데이트 |
 |-----|------|----------|------------|
-| [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 사용자 | 최근 |
+| [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 사용자 | 2023-04-29 |
 | [Architecture.md](./Architecture.md) | 프로젝트 구조도 및 아키텍처 | 개발자, 아키텍트 | 최근 |
 | [Dependencies.md](./Dependencies.md) | 의존성 관리 문서 | 개발자 | 최근 |
-| [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 | 최근 |
+| [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 | 2023-04-29 |
+| [EnvironmentVariablesGuide.md](./EnvironmentVariablesGuide.md) | 환경 변수 관리 지침 | 개발자, DevOps | 2023-04-29 |
 
 ## 2. 개발 가이드 문서
 
@@ -38,7 +39,7 @@
 | 문서 | 설명 | 주요 독자 | 최신 업데이트 |
 |-----|------|----------|------------|
 | [libwys_Keywordpulse Wbs Plan.md](./libwys_Keywordpulse%20Wbs%20Plan.md) | 작업 분할 구조 및 일정 계획 | 프로젝트 관리자, 모든 팀원 | 최근 |
-| [RAG_WBS.md](./RAG_WBS.md) | RAG 시스템 작업 분할 구조 | 개발자, AI 엔지니어 | 최근 |
+| [RAG_WBS.md](./RAG_WBS.md) | RAG 시스템 작업 분할 구조 | 개발자, AI 엔지니어 | 2023-04-29 |
 | [libwys_Keywordpulse Refactoring Doc.md](./libwys_Keywordpulse%20Refactoring%20Doc.md) | 리팩토링 계획 및 전략 | 개발자 | 최근 |
 | [libwys_requirement.md](./libwys_requirement.md) | 요구사항 명세서 | 모든 팀원 | 최근 |
 | [libwys_plan.md](./libwys_plan.md) | 프로젝트 계획 및 로드맵 | 모든 팀원 | 최근 |
@@ -52,6 +53,7 @@
 | [libwys_Keywordpulse_Vercel_Deployment.md](./libwys_Keywordpulse_Vercel_Deployment.md) | Vercel 배포 구성 가이드 | DevOps | 최근 |
 | [libwys_Keywordpulse CI_CD Guide.md](./libwys_Keywordpulse%20CI_CD%20Guide.md) | CI/CD 구성 상세 가이드 | DevOps | 최근 |
 | [libwys_Keywordpulse_Logging_Strategy.md](./libwys_Keywordpulse_Logging_Strategy.md) | 로깅 전략 및 구현 | 개발자, DevOps | 최근 |
+| [StaticExportGuide.md](./StaticExportGuide.md) | 정적 내보내기 구성 및 배포 가이드 | 개발자, DevOps | 2023-04-29 |
 
 ## 6. 디버깅 및 테스트 문서
 
@@ -73,6 +75,7 @@
 graph TD
     A[README.md] --> B[Architecture.md]
     A --> C[SETUP.md]
+    A --> Y[EnvironmentVariablesGuide.md]
     
     B --> D[Dependencies.md]
     B --> E[CodeQualityGuidelines.md]
@@ -82,6 +85,7 @@ graph TD
     
     I[CICDPipeline.md] --> J[libwys_Keywordpulse CI_CD Guide.md]
     I --> K[libwys_Keywordpulse_Vercel_Deployment.md]
+    I --> Z[StaticExportGuide.md]
     
     L[TestingStrategy.md] --> M[libwys_Keywordpulse Test Strategy.md]
     L --> N[libwys_Keywordpulse Debugging Guide.md]
@@ -90,9 +94,11 @@ graph TD
     O --> G
     
     Q[SecurityGuidelines.md] --> R[libwys_Keywordpulse Supabase Auth.md]
+    Q --> Y
     
     S[PerformanceOptimization.md] --> T[libwys_Keywordpulse_Monitoring_Ops.md]
     S --> U[libwys_Keywordpulse Seo Meta.md]
+    S --> Z
     
     V[CollaborationGuide.md] --> W[DocumentationGuidelines.md]
     W --> X[DocumentMap.md]
@@ -131,9 +137,13 @@ libwys/
 │   ├── CollaborationGuide.md  # 협업 가이드
 │   ├── DocumentationGuidelines.md # 문서화 가이드라인
 │   ├── DocumentMap.md         # 문서 맵 (이 문서)
+│   ├── EnvironmentVariablesGuide.md # 환경 변수 관리 지침
+│   ├── StaticExportGuide.md   # 정적 내보내기 가이드
 │   └── ...                    # 기타 프로젝트 문서
 ```
 
 ---
 
-이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다. 
+이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
+
+마지막 업데이트: 2023-04-29 

@@ -1,24 +1,52 @@
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
+import { Database } from '../types/supabase';
 
-// Supabase 환경 변수 확인 및 기본값 설정
-const NEXT_PUBLIC_SUPABASE_URL = 
-  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL 
-    ? process.env.NEXT_PUBLIC_SUPABASE_URL 
-    : 'https://example.supabase.co';
+// 환경 변수가 없으면 기본값 사용
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-anon-key';
 
-const NEXT_PUBLIC_SUPABASE_ANON_KEY = 
-  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
-    ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
-    : 'example-anon-key';
+// 실제 유효한 자격 증명이 있는지 확인하는 함수
+// 참고: 서버 측에서는 보안상 항상 false 반환
+export function hasValidCredentials(): boolean {
+  // 서버 사이드에서 실행 중인 경우 false 반환
+  if (typeof window === 'undefined') {
+    return false;
+  }
 
-// 실제 환경 변수가 있는지 확인하기 위한 플래그
-const hasRealCredentials = 
-  NEXT_PUBLIC_SUPABASE_URL !== 'https://example.supabase.co' && 
-  NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'example-anon-key';
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== undefined &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== '' &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://example.supabase.co' &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== undefined &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== '' &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'example-anon-key'
+  );
+}
 
-// Supabase 클라이언트 생성 - 빌드 시에도 문제없이 동작하도록 함
-export const supabase = createClient(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY);
+// Supabase 클라이언트 생성
+// 환경 변수가 없는 경우에도 빌드가 실패하지 않도록 설계
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    onAuthStateChange: hasValidCredentials() 
+      ? (event, session) => {
+          console.log(`Supabase 인증 상태 변경: ${event}`, session);
+        }
+      : () => {
+          // 유효한 자격 증명이 없는 경우 아무 작업도 수행하지 않음
+        }
+  }
+});
+
+// 클라이언트 측에서 환경 변수가 없는 경우 경고 로그 출력
+if (typeof window !== 'undefined' && !hasValidCredentials()) {
+  console.warn(
+    'Supabase 환경 변수가 설정되지 않았습니다. 인증 및 데이터 관련 기능이 작동하지 않을 수 있습니다.'
+  );
+}
 
 // SignUp 함수의 반환 타입 정의
 export type SignUpResponse = {
@@ -30,15 +58,6 @@ export type SignUpResponse = {
     message: string 
   } | null;
   message?: string;
-}
-
-// 환경 변수 설정 여부 확인을 위한 함수
-export function hasSupabaseCredentials(): boolean {
-  // 서버사이드에서는 항상 true 반환하여 빌드 오류 방지
-  if (typeof window === 'undefined') return true;
-  
-  // 클라이언트에서 실제로 값이 있는지 확인
-  return hasRealCredentials;
 }
 
 // 개발 환경 여부 확인
@@ -69,13 +88,6 @@ const saveDevUsers = (users: DevUser[]) => {
     localStorage.setItem('kp_dev_users', JSON.stringify(users));
   }
 };
-
-// 실제 환경 변수가 없는 경우 경고 로그 출력 (클라이언트에서만)
-if (typeof window !== 'undefined' && !hasRealCredentials) {
-  console.warn('Supabase 환경변수가 설정되지 않았습니다. 개발 모드로 인증 기능이 동작합니다.');
-  console.warn('NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 확인해주세요.');
-  console.warn(`개발 모드에서는 ${DEV_ADMIN_EMAIL} / ${DEV_ADMIN_PASSWORD} 계정으로 로그인할 수 있습니다.`);
-}
 
 // 방문자 세션 추적을 위한 로컬 스토리지 키
 export const LOCAL_STORAGE_KEYS = {
@@ -126,7 +138,7 @@ export async function signUp(email: string, password: string): Promise<SignUpRes
     };
   }
   
-  if (!hasSupabaseCredentials()) {
+  if (!hasValidCredentials()) {
     console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
     // 개발 모드: 이미 가입된 이메일인지 확인
@@ -288,7 +300,7 @@ export async function signIn(email: string, password: string) {
     };
   }
   
-  if (!hasSupabaseCredentials()) {
+  if (!hasValidCredentials()) {
     console.warn('[개발 모드] Supabase 환경 변수가 없어 개발 모드로 동작합니다.');
     
     // 개발 모드에서 관리자 계정으로 로그인 허용
@@ -595,4 +607,28 @@ export function hasWatchedAd() {
   if (typeof window === 'undefined') return false;
   
   return localStorage.getItem(LOCAL_STORAGE_KEYS.HAS_WATCHED_AD) === 'true';
-} 
+}
+
+// API 호출을 위한 재사용 가능한 객체 내보내기
+export const supabaseAPI = {
+  auth: {
+    // 인증 관련 메서드
+    signIn: async () => {
+      if (!hasValidCredentials()) {
+        console.warn('Supabase 환경 변수가 설정되지 않아 로그인을 수행할 수 없습니다.');
+        return { error: new Error('Supabase 환경 변수가 설정되지 않았습니다.') };
+      }
+      // 실제 인증 코드
+      return supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+    },
+    // 기타 인증 메서드...
+  },
+  data: {
+    // 데이터 관련 메서드들...
+  }
+}; 

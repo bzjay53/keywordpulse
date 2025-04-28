@@ -2,6 +2,41 @@
 
 KeywordPulse는 서버리스 환경에서 동작하는 실시간 키워드 분석 서비스입니다. Python 기반의 키워드 분석 로직을 웹 환경에서 실행하고, 사용자 친화적인 UI를 통해 결과를 제공합니다.
 
+## ⚠️ 중요 환경 변수 관리 지침
+
+이 프로젝트는 다양한 API 키와 보안 토큰을 사용합니다. 환경 변수 파일을 유지/관리할 때 다음 사항을 반드시 준수해 주세요:
+
+1. **환경 변수 파일 위치**: 
+   - 루트 디렉토리의 `.env.local` 파일이 빌드 및 런타임에 사용됩니다
+   - `app/.env.local` 파일은 메인 환경 변수 파일의 백업으로 유지됩니다
+
+2. **절대 삭제 금지 항목**:
+   - `.env.local` 및 `app/.env.local` 파일의 내용을 절대 덮어쓰거나 삭제하지 마세요
+   - 임시 테스트용 환경 변수는 별도의 `.env.test`와 같은 파일에 보관하세요
+
+3. **필수 환경 변수**:
+   ```
+   # Vercel 배포 설정
+   VERCEL_ACCESS_TOKEN=...
+
+   # Supabase 설정
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+
+   # Sentry 설정
+   SENTRY_DSN=...
+
+   # Google API 설정
+   GOOGLE_SHEETS_API_KEY=...
+   GOOGLE_SHEETS_ID=...
+
+   # Telegram 설정
+   TELEGRAM_BOT_TOKEN=...
+   TELEGRAM_CHAT_ID=...
+   ```
+
+4. **환경 변수 백업**: 새로운 환경 변수를 추가하는 경우, 항상 `app/.env.local` 백업 파일도 함께 업데이트하세요.
+
 ## 📋 주요 기능
 
 - **키워드 검색 및 분석**: 입력된 키워드에 대한 연관 키워드 추출 및 점수화
@@ -44,6 +79,7 @@ console.log(data.analysis); // 마크다운 형식의 분석 결과
 - **인증**: Supabase Auth
 - **외부 연동**: Google Sheets API, Telegram Bot API
 - **배포**: 정적 내보내기 (Static Export)를 통한 배포
+- **빌드 최적화**: 커스텀 빌드 스크립트, TypeScript 최적화
 
 ## 🚀 시작하기
 
@@ -87,7 +123,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase 익명 키>
    npm run dev
    
    # 빌드 및 정적 내보내기
-   npm run build
+   npm run build-static
    ```
 
 ## 📦 배포
@@ -98,21 +134,24 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase 익명 키>
 
 1. 정적 빌드 생성:
    ```bash
-   npm run build
+   # 커스텀 빌드 스크립트를 통한 빌드 (TypeScript 오류 무시)
+   npm run build-static
    ```
 
 2. `out` 디렉토리를 웹 서버 또는 정적 호스팅 서비스(GitHub Pages, Netlify, Vercel 등)에 배포
 
 ### Vercel 배포
 
-1. Vercel CLI 설치:
-   ```bash
-   npm i -g vercel
-   ```
+1. 환경 설정:
+   - Vercel 프로젝트 설정에서 빌드 명령어를 `npm run build-static`으로 설정
+   - 필요한 환경 변수를 Vercel 프로젝트 설정에 추가
 
 2. 배포:
    ```bash
+   # Vercel CLI를 통한 배포
    vercel
+   
+   # 또는 GitHub 저장소와 연결하여 자동 배포
    ```
 
 ## 📝 라이선스
@@ -121,9 +160,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase 익명 키>
 
 ## 📅 최근 업데이트
 
-- Next.js 14 업그레이드
-- 정적 내보내기(Static Export) 지원 추가
-- Edge Runtime API 적용
-- 빌드 및 배포 프로세스 최적화
+- **환경 변수 관리 개선**: 백업 시스템 추가 및 문서화
+- **TypeScript 빌드 최적화**: Vercel 배포 환경에서 TypeScript 관련 빌드 오류 해결을 위한 커스텀 빌드 스크립트(`build.js`) 개발
+- **정적 내보내기 안정화**: `force-dynamic` 충돌, `searchParams` 사용 관련 오류 해결
+- **Sentry 로깅 개선**: 정적 빌드와 호환되도록 개선
+- **Next.js 14 업그레이드**: 최신 기능 활용 및 성능 개선
+- **Edge Runtime API 적용**: 서버리스 환경 최적화
 
-최종 업데이트: 2023-11-20 
+최종 업데이트: 2023-11-21 

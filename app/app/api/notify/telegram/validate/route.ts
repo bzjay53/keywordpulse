@@ -20,11 +20,11 @@ export async function POST(request: Request) {
 
     // 필수 매개변수 검증
     if (!token) {
-      throw new ApiError('텔레그램 봇 토큰이 필요합니다.', 400);
+      throw new ApiError(400, '텔레그램 봇 토큰이 필요합니다.');
     }
 
     if (!chat_id) {
-      throw new ApiError('텔레그램 채팅 ID가 필요합니다.', 400);
+      throw new ApiError(400, '텔레그램 채팅 ID가 필요합니다.');
     }
 
     // 채팅 ID 유효성 검증

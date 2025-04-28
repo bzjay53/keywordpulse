@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/lib/AuthContext';
+import { AuthProvider } from '@/lib/AuthContext.tsx';
 import Header from '@/components/Header';
 import { ToastProvider } from '@/components/ui/toast';
 import { defaultMetadata } from './metadata';

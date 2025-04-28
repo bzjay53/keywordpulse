@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build-static": "node build.js",
+    "postinstall": "next telemetry disable",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

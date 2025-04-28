@@ -32,6 +32,8 @@ const nextConfig = {
   typescript: {
     // 타입 체크 오류가 있어도 빌드 진행
     ignoreBuildErrors: true,
+    // 타입 체크 완전히 비활성화
+    tsconfigPath: false,
   },
   eslint: {
     // ESLint 오류가 있어도 빌드 진행

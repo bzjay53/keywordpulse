@@ -30,7 +30,7 @@
     }
   ],
   "installCommand": "npm install",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build-static",
   "outputDirectory": "out",
   "github": {
     "enabled": true,

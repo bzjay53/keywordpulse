@@ -1,5 +1,10 @@
+'use client';
+
+import React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import './globals.css';
+import AuthProvider from './AuthProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -14,9 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko">
-      <body className={inter.className}>
-        {children}
+    <html lang="ko" className={inter.className}>
+      <body>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

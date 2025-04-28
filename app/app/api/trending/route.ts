@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTrendingKeywords, TrendCategory } from '@/lib/trends_api';
-import logger from '@/lib/logger';
+import { getTrendingKeywords, TrendCategory } from '../../../lib/trends_api';
+import logger from '../../../lib/logger';
 
-// 동적 렌더링 설정 추가
-export const dynamic = 'force-dynamic';
+// 정적 내보내기와 호환되도록 force-dynamic 설정 제거
+// export const dynamic = 'force-dynamic';
+
+// 엣지 런타임 사용 설정 추가
+export const runtime = "edge";
 
 /**
  * 트렌딩 키워드 API 엔드포인트

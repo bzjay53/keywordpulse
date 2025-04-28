@@ -90,4 +90,37 @@ export function getQueryParam(url: string, param: string): string | null {
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   return String(error)
+}
+
+/**
+ * 주어진 문자열이 유효한 URL인지 확인하는 함수
+ */
+export function isValidUrl(url: string) {
+  try {
+    new URL(url)
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
+/**
+ * 두 날짜 사이의 시간 차이를 계산하는 함수
+ */
+export function getTimeDifference(dateA: Date, dateB: Date) {
+  return Math.abs(dateA.getTime() - dateB.getTime())
+}
+
+/**
+ * 문자열을 지정된 길이로의 해시로 변환하는 함수
+ */
+export function stringToHash(str: string, length = 10) {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash // 32비트 정수로 변환
+  }
+  // 양수로 변환 후 문자열로 변환하여 해당 길이만큼 반환
+  return Math.abs(hash).toString().slice(0, length)
 } 

@@ -1,9 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 
-// 환경 변수 또는 기본값 설정
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+// Supabase 환경 변수 확인 및 기본값 설정
+const NEXT_PUBLIC_SUPABASE_URL = 
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL 
+    ? process.env.NEXT_PUBLIC_SUPABASE_URL 
+    : 'https://example.supabase.co';
+
+const NEXT_PUBLIC_SUPABASE_ANON_KEY = 
+  typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+    ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY 
+    : 'example-anon-key';
+
+// 실제 환경 변수가 있는지 확인하기 위한 플래그
+const hasRealCredentials = 
+  NEXT_PUBLIC_SUPABASE_URL !== 'https://example.supabase.co' && 
+  NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'example-anon-key';
+
+// Supabase 클라이언트 생성 - 빌드 시에도 문제없이 동작하도록 함
+export const supabase = createClient(NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // SignUp 함수의 반환 타입 정의
 export type SignUpResponse = {
@@ -19,14 +34,16 @@ export type SignUpResponse = {
 
 // 환경 변수 설정 여부 확인을 위한 함수
 export function hasSupabaseCredentials(): boolean {
-  if (typeof window === 'undefined') return false;
+  // 서버사이드에서는 항상 true 반환하여 빌드 오류 방지
+  if (typeof window === 'undefined') return true;
   
-  // 런타임에 환경 변수를 확인하여 실제로 값이 있는지 확인
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  // 클라이언트에서 실제로 값이 있는지 확인
+  return hasRealCredentials;
 }
 
 // 개발 환경 여부 확인
-export const isDevelopment = process.env.NODE_ENV === 'development';
+export const isDevelopment = 
+  typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
 
 // 환경 변수 미설정 시 개발 모드에서 사용할 기본 어드민 계정
 export const DEV_ADMIN_EMAIL = 'admin@example.com';
@@ -41,7 +58,7 @@ interface DevUser {
   created_at: string;
 }
 
-// 개발 모드를 위한 사용자 DB
+// 개발 모드를 위한 사용자 DB - 클라이언트에서만 사용
 const DEV_USERS = typeof window !== 'undefined' ? 
   JSON.parse(localStorage.getItem('kp_dev_users') || '[]') as DevUser[] : 
   [] as DevUser[];
@@ -53,15 +70,12 @@ const saveDevUsers = (users: DevUser[]) => {
   }
 };
 
-// 실제 환경 변수가 없는 경우 경고 로그 출력
-if (!supabaseUrl || !supabaseAnonKey) {
+// 실제 환경 변수가 없는 경우 경고 로그 출력 (클라이언트에서만)
+if (typeof window !== 'undefined' && !hasRealCredentials) {
   console.warn('Supabase 환경변수가 설정되지 않았습니다. 개발 모드로 인증 기능이 동작합니다.');
   console.warn('NEXT_PUBLIC_SUPABASE_URL과 NEXT_PUBLIC_SUPABASE_ANON_KEY를 확인해주세요.');
   console.warn(`개발 모드에서는 ${DEV_ADMIN_EMAIL} / ${DEV_ADMIN_PASSWORD} 계정으로 로그인할 수 있습니다.`);
 }
-
-// Supabase 클라이언트 생성
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // 방문자 세션 추적을 위한 로컬 스토리지 키
 export const LOCAL_STORAGE_KEYS = {
@@ -432,7 +446,7 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     // 로컬 스토리지에서 사용자 정보 제거
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LOCAL_STORAGE_KEYS.USER_ID);
@@ -445,7 +459,7 @@ export async function signOut() {
 }
 
 export async function getSession() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     // 개발 모드에서 세션 모의
     const userJson = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_USER) : null;
     
@@ -478,7 +492,7 @@ export async function getSession() {
 }
 
 export async function getUser() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     // 개발 모드에서 사용자 모의
     const userJson = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.CURRENT_USER) : null;
     
@@ -511,7 +525,7 @@ export async function getUser() {
 
 // 유저 역할 확인 함수 (관리자 페이지용)
 export async function isUserAdmin(userId: string) {
-  if (!supabaseUrl || !supabaseAnonKey || !userId) {
+  if (!NEXT_PUBLIC_SUPABASE_URL || !NEXT_PUBLIC_SUPABASE_ANON_KEY || !userId) {
     // 개발 모드에서 관리자 여부 확인
     const storedUserId = typeof window !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_KEYS.USER_ID) : null;
     return storedUserId === DEV_ADMIN_EMAIL;

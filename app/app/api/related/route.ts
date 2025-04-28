@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRelatedKeywords } from '@/lib/trends_api';
-import logger from '@/lib/logger';
+import { getRelatedKeywords } from '../../../lib/trends_api';
+import logger from '../../../lib/logger';
 
-// 동적 렌더링 설정 추가
-export const dynamic = 'force-dynamic';
+// 엣지 런타임 사용 설정 추가
+export const runtime = "edge";
 
 /**
  * 관련 키워드 API 엔드포인트
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     // 필수 파라미터 검증
     if (!keyword) {
       return NextResponse.json({ 
-        error: '키워드 파라미터가 필요합니다.' 
+        error: '키워드가 제공되지 않았습니다.' 
       }, { status: 400 });
     }
 

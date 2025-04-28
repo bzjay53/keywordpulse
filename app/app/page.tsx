@@ -4,19 +4,19 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import KeywordTable from '@/components/KeywordTable';
-import AnalysisCard from '@/components/AnalysisCard';
-import ActionButtons from '@/components/ActionButtons';
-import JsonLd, { createAppJsonLd, createFaqJsonLd } from '@/components/JsonLd';
-import { useAuth } from '@/lib/AuthContext';
+import KeywordTable from '../components/KeywordTable';
+import AnalysisCard from '../components/AnalysisCard';
+import ActionButtons from '../components/ActionButtons';
+import JsonLd, { createAppJsonLd, createFaqJsonLd } from '../components/JsonLd';
+import { useAuth } from '../lib/AuthContext';
 import { 
   trackSearchUsage, 
   incrementSearchCount, 
   hasWatchedAd, 
   setAdWatched 
-} from '@/lib/supabaseClient';
-import AdBanner from '@/components/AdBanner';
-import PremiumFeatures from '@/components/PremiumFeatures';
+} from '../lib/supabaseClient';
+import AdBanner from '../components/AdBanner';
+import PremiumFeatures from '../components/PremiumFeatures';
 
 // 인기 검색어 목록
 const TRENDING_KEYWORDS = [

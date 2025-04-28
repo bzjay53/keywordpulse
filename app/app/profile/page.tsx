@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/AuthContext';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '../../lib/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   
   // 텔레그램 설정을 위한 상태 추가
@@ -17,13 +17,13 @@ export default function ProfilePage() {
 
   // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!loading && !user) {
       router.push('/login');
     } else if (user) {
       // 사용자의 텔레그램 설정 불러오기
       loadTelegramSettings();
     }
-  }, [user, isLoading, router]);
+  }, [user, loading, router]);
 
   // 텔레그램 설정 불러오기
   const loadTelegramSettings = async () => {
@@ -122,7 +122,7 @@ export default function ProfilePage() {
   };
 
   // 로딩 중 또는 미인증 상태일 때 표시할 내용
-  if (isLoading || !user) {
+  if (loading || !user) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
         <svg className="animate-spin h-8 w-8 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

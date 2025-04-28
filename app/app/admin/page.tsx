@@ -13,7 +13,7 @@ interface AppSettings {
 }
 
 export default function AdminPage() {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   const [settings, setSettings] = useState<AppSettings>({
@@ -22,12 +22,12 @@ export default function AdminPage() {
     telegramNotificationsEnabled: false,
     defaultSearchProvider: 'naver'
   });
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
 
   // 관리자 권한 확인
   useEffect(() => {
-    if (!isLoading) {
+    if (!loading) {
       if (!user) {
         // 로그인하지 않은 경우 로그인 페이지로 이동
         router.push('/login');
@@ -36,7 +36,7 @@ export default function AdminPage() {
         checkAdminStatus(user.id);
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, loading, router]);
 
   // 관리자 권한 확인 함수 (실제로는 Supabase에서 확인)
   const checkAdminStatus = async (userId: string) => {
@@ -56,7 +56,7 @@ export default function AdminPage() {
 
   // 설정 저장
   const saveSettings = async () => {
-    setLoading(true);
+    setIsLoading(true);
     setMessage(null);
     
     try {
@@ -74,12 +74,12 @@ export default function AdminPage() {
         type: 'error'
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   // 로딩 중이거나 관리자가 아닌 경우
-  if (isLoading || !isAdmin) {
+  if (loading || !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="p-8 text-center">
@@ -196,9 +196,9 @@ export default function AdminPage() {
         <button
           className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
           onClick={saveSettings}
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? (
+          {isLoading ? (
             <span className="flex items-center">
               <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

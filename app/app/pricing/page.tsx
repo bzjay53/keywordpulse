@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/AuthContext';
+import { useAuth } from '../../lib/AuthContext';
 
 export default function PricingPage() {
   const { user } = useAuth();

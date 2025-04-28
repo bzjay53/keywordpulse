@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getKeywordTrend } from '@/lib/trends_api';
-import logger from '@/lib/logger';
+import { getKeywordTrend } from '../../../lib/trends_api';
+import logger from '../../../lib/logger';
 
-// 동적 렌더링 설정 추가
-export const dynamic = 'force-dynamic';
+// 정적 내보내기와 호환되도록 force-dynamic 설정 제거
+// export const dynamic = 'force-dynamic';
+
+// 엣지 런타임 사용 설정 추가
+export const runtime = "edge";
 
 /**
  * 키워드 트렌드 API 엔드포인트
@@ -25,16 +28,15 @@ export async function GET(request: NextRequest) {
     // 필수 파라미터 검증
     if (!keyword) {
       return NextResponse.json({ 
-        error: '키워드 파라미터가 필요합니다.' 
+        error: '키워드가 제공되지 않았습니다.' 
       }, { status: 400 });
     }
 
     // 유효성 검사
     const validTimeRanges = ['day', 'week', 'month', 'year'];
-    if (!validTimeRanges.includes(timeRange as string)) {
+    if (!validTimeRanges.includes(timeRange)) {
       return NextResponse.json({ 
-        error: '유효하지 않은 시간 범위입니다.',
-        validTimeRanges 
+        error: '유효하지 않은 시간 범위입니다. day, week, month, year 중 하나를 사용하세요.' 
       }, { status: 400 });
     }
 

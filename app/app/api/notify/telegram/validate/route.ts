@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { validateTelegramChatId } from '@/lib/telegram';
-import { ApiError } from '@/lib/errors';
+import { validateTelegramChatId } from '../../../../../lib/telegram';
+import { ApiError } from '../../../../../lib/errors';
 
 /**
  * POST /api/notify/telegram/validate

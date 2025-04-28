@@ -3,7 +3,7 @@
 import React from 'react';
 import { Inter } from 'next/font/google';
 import Header from '../components/Header';
-import '../globals.css';
+import './globals.css';
 import AuthProvider from './AuthProvider';
 import { ToastProvider } from '../components/ui/toast';
 

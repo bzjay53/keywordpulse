@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useAuth } from '@/lib/AuthContext';
-import { hasSupabaseCredentials, isDevelopment } from '@/lib/supabaseClient';
+import { useAuth } from '../lib/AuthContext';
+import { supabase } from '../lib/supabaseClient';
 
 export default function Header() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, loading: isLoading, signOut: logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   // 로그인 상태 디버깅
   useEffect(() => {
@@ -15,7 +16,7 @@ export default function Header() {
       console.log('[Header] 인증 상태 변경:', { 
         isAuthenticated: !!user, 
         isLoading,
-        hasCredentials: hasSupabaseCredentials()
+        hasCredentials: !!supabase
       });
     }
   }, [user, isLoading]);

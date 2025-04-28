@@ -9,6 +9,7 @@ KeywordPulse는 서버리스 환경에서 동작하는 실시간 키워드 분�
 - **Google Sheets 연동**: 분석 결과를 스프레드시트에 저장
 - **Telegram 알림**: 분석 결과를 텔레그램으로 전송
 - **반응형 UI**: 모바일/데스크탑 환경 모두에서 최적화된 경험
+- **정적 내보내기**: Next.js의 정적 내보내기를 통해 서버 없이도 배포 가능
 
 ## 🤖 RAG 시스템 (Retrieval-Augmented Generation)
 
@@ -38,10 +39,11 @@ console.log(data.analysis); // 마크다운 형식의 분석 결과
 
 ## 🛠️ 기술 스택
 
-- **프론트엔드**: Next.js, React, TypeScript, TailwindCSS
-- **백엔드**: Python, FastAPI, Vercel Serverless Functions
+- **프론트엔드**: Next.js 14, React, TypeScript, TailwindCSS
+- **백엔드**: Python, FastAPI, Edge Runtime API
 - **인증**: Supabase Auth
 - **외부 연동**: Google Sheets API, Telegram Bot API
+- **배포**: 정적 내보내기 (Static Export)를 통한 배포
 
 ## 🚀 시작하기
 
@@ -59,7 +61,7 @@ TELEGRAM_CHAT_ID=<텔레그램 채팅 ID>
 
 # Supabase 연동 (선택)
 NEXT_PUBLIC_SUPABASE_URL=<Supabase 프로젝트 URL>
-NEXT_PUBLIC_SUPABASE_KEY=<Supabase 공개 API 키>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase 익명 키>
 ```
 
 ### 로컬 개발 환경 설정
@@ -76,24 +78,32 @@ NEXT_PUBLIC_SUPABASE_KEY=<Supabase 공개 API 키>
    pip install -r requirements.txt
 
    # 프론트엔드 (Node.js)
-   cd app
    npm install
    ```
 
 3. 개발 서버 실행:
    ```bash
-   # 백엔드 (Python)
-   # Vercel Dev로 실행하는 것을 권장하나, 다음으로도 가능:
-   uvicorn api.main:app --reload --port 3001
-
-   # 프론트엔드 (Node.js)
-   cd app
+   # 개발 모드 실행
    npm run dev
+   
+   # 빌드 및 정적 내보내기
+   npm run build
    ```
 
 ## 📦 배포
 
-이 프로젝트는 Vercel에 서버리스 환경으로 배포되도록 설계되었습니다:
+이 프로젝트는 다음과 같은 방법으로 배포할 수 있습니다:
+
+### 정적 내보내기 (추천)
+
+1. 정적 빌드 생성:
+   ```bash
+   npm run build
+   ```
+
+2. `out` 디렉토리를 웹 서버 또는 정적 호스팅 서비스(GitHub Pages, Netlify, Vercel 등)에 배포
+
+### Vercel 배포
 
 1. Vercel CLI 설치:
    ```bash
@@ -108,3 +118,12 @@ NEXT_PUBLIC_SUPABASE_KEY=<Supabase 공개 API 키>
 ## 📝 라이선스
 
 이 프로젝트는 MIT 라이선스로 제공됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요. 
+
+## 📅 최근 업데이트
+
+- Next.js 14 업그레이드
+- 정적 내보내기(Static Export) 지원 추가
+- Edge Runtime API 적용
+- 빌드 및 배포 프로세스 최적화
+
+최종 업데이트: 2023-11-20 

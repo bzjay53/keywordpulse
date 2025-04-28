@@ -1,44 +1,35 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/lib/AuthContext';
-import Header from '@/components/Header';
-import { ToastProvider } from '@/components/ui/toast';
-import { defaultMetadata } from './metadata';
+'use client';
 
+import React from 'react';
+import { Inter } from 'next/font/google';
+import Header from '../components/Header';
+import '../globals.css';
+import AuthProvider from './AuthProvider';
+import { ToastProvider } from '../components/ui/toast';
+
+// 폰트 설정
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'KeywordPulse - 키워드 분석 및 모니터링 서비스',
-  description: '키워드 분석 및 모니터링을 통해 마케팅 전략을 최적화하세요.',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body className={inter.className}>
+    <html lang="ko" className={inter.className}>
+      <body className="min-h-screen bg-gray-50">
         <AuthProvider>
           <ToastProvider>
-            <Header />
-            
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-              {children}
-            </main>
-
-            <footer className="bg-gray-100 mt-12">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <p className="text-center text-gray-500 text-sm">
+            <div className="flex flex-col min-h-screen">
+              <Header />
+              <main className="container mx-auto px-4 py-8 flex-grow">
+                {children}
+              </main>
+              <footer className="bg-white shadow-inner py-6 mt-auto">
+                <div className="container mx-auto px-4 text-center text-gray-500 text-sm">
                   &copy; {new Date().getFullYear()} KeywordPulse. All rights reserved.
-                </p>
-              </div>
-            </footer>
+                </div>
+              </footer>
+            </div>
           </ToastProvider>
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 } 

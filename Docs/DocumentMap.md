@@ -1,159 +1,148 @@
-# 문서 맵 (Documentation Map)
+# KeywordPulse 문서 맵
 
-이 문서는 KeywordPulse 프로젝트의 모든 문서에 대한 개요와 상호 참조를 제공합니다.
+이 문서는 KeywordPulse 프로젝트의 전체 문서 구조를 설명하는 맵입니다. 각 문서의 목적과 상호 관계를 이해하는 데 도움이 됩니다.
 
 ## 1. 프로젝트 개요 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 사용자 | 2023-04-29 |
-| [Architecture.md](./Architecture.md) | 프로젝트 아키텍처 설계 문서 | 개발자, 아키텍트 | 최근 |
-| [ProjectStructure.md](./ProjectStructure.md) | 프로젝트 구조 및 디렉토리 구성 | 개발자, 아키텍트 | 최근 |
-| [Dependencies.md](./Dependencies.md) | 의존성 관리 문서 | 개발자 | 최근 |
-| [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 | 2023-04-29 |
-| [EnvironmentVariablesGuide.md](./EnvironmentVariablesGuide.md) | 환경 변수 관리 지침 | 개발자, DevOps | 2023-04-29 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 신규 참여자 |
+| [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 |
+| [ReferenceArchitecture.md](./ReferenceArchitecture.md) | 시스템 아키텍처 개요 및 구조 | 모든 개발자, 아키텍트 |
 
-## 2. 개발 가이드 문서
+## 2. 계획 및 관리 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [CodeQualityGuidelines.md](./CodeQualityGuidelines.md) | 코드 품질 표준 및 모범 사례 | 개발자 | 최근 |
-| [CodingStyleGuide.md](./CodingStyleGuide.md) | 코드 작성 스타일 가이드라인 | 개발자 | 2023-11-30 |
-| [TestingStrategy.md](./TestingStrategy.md) | 테스트 전략 및 구현 지침 | 개발자, QA | 최근 |
-| [CICDPipeline.md](./CICDPipeline.md) | CI/CD 파이프라인 구성 및 작업 흐름 | 개발자, DevOps | 최근 |
-| [SecurityGuidelines.md](./SecurityGuidelines.md) | 보안 모범 사례 및 지침 | 개발자, 보안 담당자 | 최근 |
-| [PerformanceOptimization.md](./PerformanceOptimization.md) | 성능 최적화 전략 및 구현 지침 | 개발자 | 최근 |
-| [CollaborationGuide.md](./CollaborationGuide.md) | 팀 협업 방식 및 작업 흐름 | 모든 팀원 | 최근 |
-| [DocumentationGuidelines.md](./DocumentationGuidelines.md) | 문서 작성 표준 및 지침 | 모든 팀원 | 최근 |
-| [MonitoringSystem.md](./MonitoringSystem.md) | 모니터링 시스템 설계 및 구현 | 개발자, DevOps | 2023-11-30 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [libwys_Keywordpulse Wbs Plan.md](./libwys_Keywordpulse%20Wbs%20Plan.md) | 작업 분해 구조 및 일정 계획 | 프로젝트 관리자, 개발팀 |
+| [RAG_WBS.md](./RAG_WBS.md) | RAG 시스템 개발 작업 분해 구조 | AI 개발팀 |
+| [libwys_Keywordpulse_Deployment_Status.md](./libwys_Keywordpulse_Deployment_Status.md) | 배포 상태 및 계획 | DevOps, 프로젝트 관리자 |
 
-## 3. 구현 및 참조 문서
+## 3. 개발 가이드라인 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [libwys_Keywordpulse Reference Doc.md](./libwys_Keywordpulse%20Reference%20Doc.md) | 키워드 분석 참조 문서 | 개발자 | 최근 |
-| [libwys_KeywordPulse API.md](./libwys_KeywordPulse%20API.md) | API 명세 및 사용법 | 개발자, 통합 개발자 | 최근 |
-| [libwys_Keywordpulse Rag Doc.md](./libwys_Keywordpulse%20Rag%20Doc.md) | RAG 시스템 설계 및 구현 문서 | 개발자, AI 엔지니어 | 최근 |
-| [libwys_Keywordpulse Supabase Auth.md](./libwys_Keywordpulse%20Supabase%20Auth.md) | Supabase 인증 통합 가이드 | 개발자 | 최근 |
-| [libwys_Keywordpulse Seo Meta.md](./libwys_Keywordpulse%20Seo%20Meta.md) | SEO 및 메타데이터 구성 가이드 | 개발자, 마케팅 | 최근 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [CodeQualityGuidelines.md](./CodeQualityGuidelines.md) | 코드 품질 표준 및 모범 사례 | 모든 개발자 |
+| [SecurityGuidelines.md](./SecurityGuidelines.md) | 보안 관련 가이드라인 | 모든 개발자 |
+| [PerformanceOptimization.md](./PerformanceOptimization.md) | 성능 최적화 전략 | 프론트엔드 개발자 |
+| [DependencyManagement.md](./DependencyManagement.md) | 패키지 및 의존성 관리 가이드 | 모든 개발자 |
+| [BrowserSupportPolicy.md](./BrowserSupportPolicy.md) | 지원 브라우저 정책 | 프론트엔드 개발자 |
 
-## 4. 워크플로우 및 계획 문서
+## 4. 기술 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [libwys_Keywordpulse Wbs Plan.md](./libwys_Keywordpulse%20Wbs%20Plan.md) | 작업 분할 구조 및 일정 계획 | 프로젝트 관리자, 모든 팀원 | 최근 |
-| [RAG_WBS.md](./RAG_WBS.md) | RAG 시스템 작업 분할 구조 | 개발자, AI 엔지니어 | 2023-04-29 |
-| [libwys_Keywordpulse Refactoring Doc.md](./libwys_Keywordpulse%20Refactoring%20Doc.md) | 리팩토링 계획 및 전략 | 개발자 | 최근 |
-| [libwys_requirement.md](./libwys_requirement.md) | 요구사항 명세서 | 모든 팀원 | 최근 |
-| [libwys_plan.md](./libwys_plan.md) | 프로젝트 계획 및 로드맵 | 모든 팀원 | 최근 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [libwys_Keywordpulse Refactoring Doc.md](./libwys_Keywordpulse%20Refactoring%20Doc.md) | 리팩토링 계획 및 가이드 | 개발팀 |
+| [PathManagement.md](./PathManagement.md) | 파일 경로 관리 가이드 | 개발팀 |
+| [APIGuidelines.md](./APIGuidelines.md) | API 설계 및 구현 가이드 | 백엔드 개발자 |
 
-## 5. 운영 및 배포 문서
+## 5. 인프라 관련 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [libwys_Keywordpulse_Monitoring_Ops.md](./libwys_Keywordpulse_Monitoring_Ops.md) | 모니터링 및 운영 가이드 | 운영팀, DevOps | 최근 |
-| [libwys_Keywordpulse_Deployment_Status.md](./libwys_Keywordpulse_Deployment_Status.md) | 배포 상태 및 로그 | 운영팀, DevOps | 최근 |
-| [libwys_Keywordpulse_Vercel_Deployment.md](./libwys_Keywordpulse_Vercel_Deployment.md) | Vercel 배포 구성 가이드 | DevOps | 최근 |
-| [libwys_Keywordpulse CI_CD Guide.md](./libwys_Keywordpulse%20CI_CD%20Guide.md) | CI/CD 구성 상세 가이드 | DevOps | 최근 |
-| [libwys_Keywordpulse_Logging_Strategy.md](./libwys_Keywordpulse_Logging_Strategy.md) | 로깅 전략 및 구현 | 개발자, DevOps | 최근 |
-| [StaticExportGuide.md](./StaticExportGuide.md) | 정적 내보내기 구성 및 배포 가이드 | 개발자, DevOps | 2023-04-29 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [CICDSetup.md](./CICDSetup.md) | CI/CD 파이프라인 설정 가이드 | DevOps 엔지니어 |
+| [EnvironmentSetup.md](./EnvironmentSetup.md) | 개발/스테이징/운영 환경 설정 | DevOps 엔지니어 |
 
-## 6. 디버깅 및 테스트 문서
+## 6. 테스트 관련 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [libwys_Keywordpulse Debugging Guide.md](./libwys_Keywordpulse%20Debugging%20Guide.md) | 디버깅 프로세스 및 도구 | 개발자 | 최근 |
-| [libwys_Keywordpulse Test Strategy.md](./libwys_Keywordpulse%20Test%20Strategy.md) | 테스트 전략 및 사례 | 개발자, QA | 최근 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [TestingStrategy.md](./TestingStrategy.md) | 테스트 전략 및 접근 방식 | QA, 개발자 |
+| [E2ETestingGuide.md](./E2ETestingGuide.md) | 종단간 테스트 가이드 | QA 엔지니어 |
 
-## 7. 사용자 문서
+## 7. 비즈니스 및 기능 문서
 
-| 문서 | 설명 | 주요 독자 | 최신 업데이트 |
-|-----|------|----------|------------|
-| [libwys_Keywordpulse User Guide.md](./libwys_Keywordpulse%20User%20Guide.md) | 사용자 가이드 및 기능 설명 | 최종 사용자 | 최근 |
-| [libwys_Keywordpulse Release Notes.md](./libwys_Keywordpulse%20Release%20Notes.md) | 릴리스 노트 및 변경 사항 | 모든 이해관계자 | 최근 |
+| 문서 이름 | 설명 | 주요 대상 |
+|---------|------|----------|
+| [FeatureRequirements.md](./FeatureRequirements.md) | 기능 요구사항 명세 | 제품 관리자, 개발자 |
+| [UserJourneys.md](./UserJourneys.md) | 사용자 여정 및 시나리오 | 디자이너, 개발자 |
 
-## 8. 문서 간 관계도
+## 문서 관계도
 
 ```mermaid
 graph TD
-    A[README.md] --> B[Architecture.md]
-    A --> C[SETUP.md]
-    A --> Y[EnvironmentVariablesGuide.md]
+    README[README.md] --> SETUP[SETUP.md]
+    README --> ARCH[ReferenceArchitecture.md]
     
-    B --> PS[ProjectStructure.md]
-    B --> D[Dependencies.md]
-    B --> E[CodeQualityGuidelines.md]
-    E --> E1[CodingStyleGuide.md]
+    ARCH --> DEP[DependencyManagement.md]
+    ARCH --> CODE[CodeQualityGuidelines.md]
+    ARCH --> PERF[PerformanceOptimization.md]
     
-    F[libwys_Keywordpulse Wbs Plan.md] --> G[RAG_WBS.md]
-    F --> H[libwys_Keywordpulse Refactoring Doc.md]
+    WBS[libwys_Keywordpulse Wbs Plan.md] --> RAG[RAG_WBS.md]
+    WBS --> DEPLOY[libwys_Keywordpulse_Deployment_Status.md]
+    WBS --> REFACTOR[libwys_Keywordpulse Refactoring Doc.md]
     
-    I[CICDPipeline.md] --> J[libwys_Keywordpulse CI_CD Guide.md]
-    I --> K[libwys_Keywordpulse_Vercel_Deployment.md]
-    I --> Z[StaticExportGuide.md]
+    CODE --> TESTING[TestingStrategy.md]
+    CODE --> SECURITY[SecurityGuidelines.md]
     
-    L[TestingStrategy.md] --> M[libwys_Keywordpulse Test Strategy.md]
-    L --> N[libwys_Keywordpulse Debugging Guide.md]
+    DEP --> CICD[CICDSetup.md]
     
-    O[libwys_Keywordpulse Rag Doc.md] --> P[libwys_KeywordPulse API.md]
-    O --> G
+    REFACTOR --> PATH[PathManagement.md]
     
-    Q[SecurityGuidelines.md] --> R[libwys_Keywordpulse Supabase Auth.md]
-    Q --> Y
+    subgraph "프로젝트 개요"
+        README
+        SETUP
+        ARCH
+    end
     
-    S[PerformanceOptimization.md] --> T[libwys_Keywordpulse_Monitoring_Ops.md]
-    S --> U[libwys_Keywordpulse Seo Meta.md]
-    S --> Z
+    subgraph "계획 및 관리"
+        WBS
+        RAG
+        DEPLOY
+    end
     
-    T --> MS[MonitoringSystem.md]
+    subgraph "개발 가이드라인"
+        CODE
+        SECURITY
+        PERF
+        DEP
+        BROWSER[BrowserSupportPolicy.md]
+    end
     
-    V[CollaborationGuide.md] --> W[DocumentationGuidelines.md]
-    W --> X[DocumentMap.md]
+    subgraph "기술 문서"
+        REFACTOR
+        PATH
+        API[APIGuidelines.md]
+    end
+    
+    subgraph "인프라 관련"
+        CICD
+        ENV[EnvironmentSetup.md]
+    end
+    
+    subgraph "테스트 관련"
+        TESTING
+        E2E[E2ETestingGuide.md]
+    end
+    
+    subgraph "비즈니스/기능"
+        FEATURE[FeatureRequirements.md]
+        USER[UserJourneys.md]
+    end
 ```
 
-## 9. 문서 관리 가이드라인
+## 문서 관리 가이드라인
 
-### 9.1 문서 업데이트 프로세스
+1. **문서 업데이트 빈도**:
+   - 프로젝트 개요 문서: 주요 변경 시
+   - 계획 및 관리 문서: 주간 또는 스프린트 단위
+   - 개발 가이드라인: 필요 시, 분기별 검토
+   - 기술 문서: 관련 코드 변경 시
 
-1. 모든 문서 변경은 PR을 통해 이루어져야 합니다.
-2. 문서 변경 시 관련 문서도 함께 검토하고 필요시 업데이트합니다.
-3. 문서 변경 후 이 문서 맵의 "최신 업데이트" 열을 갱신합니다.
-4. 주요 문서 변경은 팀에 알립니다.
+2. **문서 작성 형식**:
+   - Markdown 형식 사용
+   - 명확한 제목과 구조화된 목차
+   - 코드 예제가 있는 경우 문법 하이라이팅 사용
+   - 다이어그램 필요 시 Mermaid 또는 PlantUML 사용
 
-### 9.2 새 문서 추가 절차
+3. **문서 관리 책임**:
+   - 각 문서에 주 담당자 지정
+   - 문서 변경 시 PR 과정을 통한 리뷰
 
-1. 적절한 카테고리에 문서를 추가합니다.
-2. 이 문서 맵에 새 문서를 등록합니다.
-3. 관련 문서에 상호 참조를 추가합니다.
-4. 새 문서 추가 PR을 생성하여 검토를 요청합니다.
-
-## 10. 문서 폴더 구조
-
-```
-libwys/
-├── README.md                  # 프로젝트 루트 README
-├── SETUP.md                   # 설정 가이드
-├── Docs/                      # 문서 루트 디렉토리
-│   ├── Architecture.md        # 아키텍처 문서
-│   ├── ProjectStructure.md    # 프로젝트 구조 문서
-│   ├── Dependencies.md        # 의존성 문서
-│   ├── CodeQualityGuidelines.md # 코드 품질 가이드라인
-│   ├── CodingStyleGuide.md    # 코딩 스타일 가이드
-│   ├── TestingStrategy.md     # 테스트 전략
-│   ├── CICDPipeline.md        # CI/CD 파이프라인
-│   ├── SecurityGuidelines.md  # 보안 가이드라인
-│   ├── PerformanceOptimization.md # 성능 최적화
-│   ├── MonitoringSystem.md    # 모니터링 시스템 설계
-│   ├── CollaborationGuide.md  # 협업 가이드
-│   ├── DocumentationGuidelines.md # 문서화 가이드라인
-│   ├── DocumentMap.md         # 문서 맵 (이 문서)
-│   ├── EnvironmentVariablesGuide.md # 환경 변수 관리 지침
-│   ├── StaticExportGuide.md   # 정적 내보내기 가이드
-│   └── ...                    # 기타 프로젝트 문서
-```
+4. **문서 검색 및 접근**:
+   - 이 문서 맵을 통해 모든 문서 접근
+   - README의 문서 섹션에서 핵심 문서 링크
 
 ---
 
-이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
-
-마지막 업데이트: 2023-11-30 
+이 문서 맵은 프로젝트 진행에 따라 지속적으로 업데이트됩니다. 누락된 문서가 있거나 새로운 문서 추가가 필요한 경우 프로젝트 관리자에게 알려주세요. 

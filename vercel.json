@@ -15,8 +15,8 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "npm install typescript && npm install --omit=dev",
-        "buildCommand": "npm run build"
+        "installCommand": "npm install typescript @types/node @types/react @types/react-dom --save && npm install",
+        "buildCommand": "NODE_OPTIONS=--max_old_space_size=4096 SKIP_TYPESCRIPT_CHECK=true NEXT_TELEMETRY_DISABLED=1 next build"
       }
     }
   ],
@@ -28,7 +28,7 @@
   ],
   "installCommand": "npm install typescript --no-save && npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next",
+  "outputDirectory": "out",
   "github": {
     "enabled": true,
     "silent": true

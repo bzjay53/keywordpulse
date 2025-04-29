@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "SKIP_TYPESCRIPT_CHECK=true next build",
+    "build": "node build.js",
     "build-static": "node build.js",
     "postinstall": "next telemetry disable",
     "start": "next start",

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm install typescript && next build",
     "build-static": "node build.js",
     "postinstall": "next telemetry disable",
     "start": "next start",

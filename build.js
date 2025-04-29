@@ -8,19 +8,30 @@ const fs = require('fs');
 const path = require('path');
 
 // 로그 메시지 출력 함수
-const log = (message) => {
-  console.log(`[Build] ${message}`);
+const log = (message, isError = false) => {
+  if (isError) {
+    console.error(`[Build Error] ${message}`);
+  } else {
+    console.log(`[Build] ${message}`);
+  }
 };
 
-// 명령어 실행 함수
-const runCommand = (command) => {
+// 명령어 실행 함수 - 상세 로그 추가
+const runCommand = (command, options = {}) => {
   try {
     log(`Running command: ${command}`);
-    execSync(command, { stdio: 'inherit' });
-    return true;
+    const output = execSync(command, { 
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      ...options
+    });
+    console.log(output); // 명령어 출력 표시
+    return { success: true, output };
   } catch (error) {
-    log(`Command failed: ${error.message}`);
-    return false;
+    log(`Command failed: ${error.message}`, true);
+    if (error.stdout) console.log(error.stdout.toString());
+    if (error.stderr) console.error(error.stderr.toString());
+    return { success: false, error };
   }
 };
 
@@ -36,12 +47,46 @@ const checkAndInstallPackages = () => {
   for (const pkg of requiredPackages) {
     if (!fs.existsSync(path.join('node_modules', pkg))) {
       log(`${pkg} not found, installing...`);
-      if (!runCommand(`npm install ${pkg} --no-save`)) {
+      const result = runCommand(`npm install ${pkg} --save`);
+      if (!result.success) {
+        log(`상세 오류 정보: ${JSON.stringify(result.error)}`, true);
         throw new Error(`Failed to install ${pkg}`);
       }
     } else {
       log(`${pkg} is already installed`);
     }
+  }
+};
+
+// 시스템 정보 출력
+const logSystemInfo = () => {
+  log('시스템 정보 확인 중...');
+  
+  try {
+    const nodeVersion = execSync('node --version', { encoding: 'utf-8' }).trim();
+    const npmVersion = execSync('npm --version', { encoding: 'utf-8' }).trim();
+    
+    log(`Node.js 버전: ${nodeVersion}`);
+    log(`NPM 버전: ${npmVersion}`);
+    
+    // 설치된 주요 패키지 버전 확인
+    const pkgJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+    const dependencies = { ...pkgJson.dependencies };
+    
+    log('주요 패키지 버전:');
+    ['next', 'react', 'typescript'].forEach(pkg => {
+      if (dependencies[pkg]) {
+        log(`- ${pkg}: ${dependencies[pkg]}`);
+      }
+    });
+    
+    // 운영체제 정보
+    const platform = process.platform;
+    const arch = process.arch;
+    log(`운영체제: ${platform} (${arch})`);
+    
+  } catch (error) {
+    log(`시스템 정보 확인 중 오류: ${error.message}`, true);
   }
 };
 
@@ -152,7 +197,7 @@ const ensureTypescriptInDependencies = () => {
       fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
       
       // Install packages to update node_modules
-      runCommand('npm install');
+      runCommand('npm install typescript --save');
     } else {
       log('TypeScript already in dependencies');
     }
@@ -174,10 +219,43 @@ const setupNpmrc = () => {
   log('Created .npmrc to include dev dependencies in production');
 };
 
+// Vercel 관련 설정 파일 확인
+const checkVercelConfig = () => {
+  if (fs.existsSync('vercel.json')) {
+    log('vercel.json 파일 확인 중...');
+    try {
+      const vercelConfig = JSON.parse(fs.readFileSync('vercel.json', 'utf-8'));
+      log(`vercel.json 구성: ${JSON.stringify(vercelConfig, null, 2)}`);
+      
+      // 빌드 설정 확인
+      if (vercelConfig.builds) {
+        for (const build of vercelConfig.builds) {
+          if (build.config && build.config.installCommand) {
+            log(`설치 명령어: ${build.config.installCommand}`);
+          }
+          if (build.config && build.config.buildCommand) {
+            log(`빌드 명령어: ${build.config.buildCommand}`);
+          }
+        }
+      }
+    } catch (error) {
+      log(`vercel.json 파일 읽기 오류: ${error.message}`, true);
+    }
+  } else {
+    log('vercel.json 파일이 존재하지 않습니다.');
+  }
+};
+
 // 메인 빌드 함수
 const build = async () => {
   try {
     log('Starting build process');
+    
+    // 시스템 정보 출력
+    logSystemInfo();
+    
+    // Vercel 설정 확인
+    checkVercelConfig();
 
     // Vercel 환경에서 실행 중인지 확인
     if (isRunningOnVercel()) {
@@ -186,6 +264,10 @@ const build = async () => {
       ensureTypescriptInDependencies();
       setupNextConfig();
       ensureTypeDefinitions();
+    } else {
+      log('Running in local or CI environment');
+      ensureTypescriptInDependencies();
+      setupNextConfig();
     }
 
     // TypeScript 설치 확인
@@ -198,13 +280,19 @@ const build = async () => {
 
     // 빌드 실행
     log('Running Next.js build');
-    if (!runCommand('next build')) {
+    const buildResult = runCommand('next build');
+    if (!buildResult.success) {
+      log('Build command failed. Checking TypeScript installation...', true);
+      // TypeScript 설치 상태 다시 확인
+      const tscResult = runCommand('npx tsc --version');
+      log(`TypeScript 버전 확인: ${tscResult.success ? tscResult.output : 'Not installed'}`);
+      
       throw new Error('Build failed');
     }
 
     log('Build completed successfully');
   } catch (error) {
-    log(`Build failed: ${error.message}`);
+    log(`Build failed: ${error.message}`, true);
     process.exit(1);
   } finally {
     // 항상 tsconfig.json 복원

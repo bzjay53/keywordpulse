@@ -1,427 +1,293 @@
 # KeywordPulse 코드 품질 가이드라인
 
-이 문서는 KeywordPulse 프로젝트의 코드 품질 유지를 위한 표준과 모범 사례를 제공합니다.
+## 목차
+- [개요](#개요)
+- [코딩 표준](#코딩-표준)
+- [코드 구조화](#코드-구조화)
+- [TypeScript 모범 사례](#typescript-모범-사례)
+- [React 및 Next.js 모범 사례](#react-및-nextjs-모범-사례)
+- [성능 최적화](#성능-최적화)
+- [코드 주석](#코드-주석)
+- [CSS 및 스타일링](#css-및-스타일링)
+- [테스트 코드 품질](#테스트-코드-품질)
+- [코드 리뷰 가이드라인](#코드-리뷰-가이드라인)
+- [관련 문서](#관련-문서)
 
-## 1. 코드 스타일 및 포맷팅
+## 개요
 
-### 1.1 TypeScript/JavaScript
+이 문서는 KeywordPulse 프로젝트의 코드 품질을 유지하기 위한 가이드라인을 제공합니다. 이 가이드라인은 코드의 일관성, 유지보수성, 가독성을 보장하기 위한 것입니다.
 
-- [ESLint](https://eslint.org/) 및 [Prettier](https://prettier.io/)를 사용하여 일관된 코드 스타일 유지
-- 들여쓰기: 2 스페이스
-- 세미콜론: 사용
-- 문자열: 작은따옴표(`'`) 사용
-- 객체 스프레드: 객체 복사 시 `Object.assign()` 대신 스프레드 연산자(`{...obj}`) 사용
-- 화살표 함수: 가능한 화살표 함수 사용
-- 최대 줄 길이: 100자
+## 코딩 표준
 
-```typescript
-// 잘못된 예
-function doSomething(value) {
-    if (value == true) {
-        return "success";
-    }
-    return "fail"
-}
+### 명명 규칙
 
-// 올바른 예
-const doSomething = (value: boolean): string => {
-  if (value === true) {
-    return 'success';
+- **변수 및 함수**: camelCase 사용
+  ```typescript
+  const userData = fetchUserData();
+  ```
+
+- **컴포넌트**: PascalCase 사용
+  ```typescript
+  const KeywordCard = ({ keyword }) => { ... };
+  ```
+
+- **인터페이스 및 타입**: PascalCase 사용, 인터페이스는 'I' 접두사 없이
+  ```typescript
+  interface UserData { ... }
+  type KeywordScore = { ... };
+  ```
+
+- **파일 이름**: 
+  - 컴포넌트: PascalCase (예: `KeywordCard.tsx`)
+  - 유틸리티 및 모듈: camelCase (예: `analyticsUtils.ts`)
+
+### 코드 포맷팅
+
+- ESLint와 Prettier를 사용하여 코드 포맷팅 일관성 유지
+- 들여쓰기는 2칸 사용
+- 한 줄 최대 길이: 100자
+- 세미콜론 사용
+- 작은따옴표 대신 큰따옴표 사용
+
+### 일관성 유지를 위한 도구
+
+```bash
+# 코드 포맷팅 검사
+npm run lint
+
+# 코드 포맷팅 자동 수정
+npm run lint:fix
+```
+
+## 코드 구조화
+
+### 파일 및 디렉토리 구조
+
+- 관련 기능은 동일한 디렉토리에 그룹화
+- 파일 크기는 300줄 이하로 유지 (컴포넌트 포함)
+- 컴포넌트는 다음과 같은 구조로 정리:
+  - 컴포넌트 인터페이스 정의
+  - 상수 및 헬퍼 함수
+  - 주요 컴포넌트 구현
+  - 내보내기 (export)
+
+### 모듈 분리
+
+큰 모듈은 다음과 같이 분리:
+
+```
+KeywordAnalysis/
+├── components/
+│   ├── AnalysisChart.tsx
+│   ├── KeywordTable.tsx
+│   └── ScoreCard.tsx
+├── hooks/
+│   ├── useKeywordData.ts
+│   └── useAnalytics.ts
+├── utils/
+│   ├── scoring.ts
+│   └── formatting.ts
+├── types.ts
+└── index.ts
+```
+
+## TypeScript 모범 사례
+
+### 타입 정의
+
+- 모든 함수 매개변수와 반환 값에 타입 지정
+  ```typescript
+  function calculateScore(keyword: string, factors: ScoreFactor[]): number { ... }
+  ```
+
+- 암시적 `any` 사용 금지
+- 복잡한 타입은 별도 인터페이스나 타입으로 분리
+  ```typescript
+  interface KeywordAnalysisResult {
+    score: number;
+    volume: number;
+    difficulty: number;
+    recommendations: Recommendation[];
   }
-  return 'fail';
-};
-```
+  ```
 
-### 1.2 CSS/Tailwind
+### 타입 안전성
 
-- 컴포넌트별 스타일링: Tailwind CSS 클래스 사용
-- 클래스 이름 구성: [tailwind-merge](https://github.com/dcastil/tailwind-merge) 및 [clsx](https://www.npmjs.com/package/clsx) 사용
-- 복잡한 스타일은 별도의 유틸리티 함수로 분리
+- 타입 단언(`as`) 대신 타입 가드 사용
+  ```typescript
+  // 지양할 사항:
+  const result = someValue as AnalysisResult;
+  
+  // 권장 사항:
+  if (isAnalysisResult(someValue)) {
+    const result: AnalysisResult = someValue;
+    // ...
+  }
+  ```
 
-```tsx
-// 잘못된 예
-<div className="bg-blue-500 hover:bg-blue-700 hover:text-white px-4 py-2 rounded shadow-md">Button</div>
+- null과 undefined 처리에 Optional Chaining 및 Nullish Coalescing 사용
+  ```typescript
+  const score = data?.analysis?.score ?? 0;
+  ```
 
-// 올바른 예
-import { cn } from '@/lib/utils';
+## React 및 Next.js 모범 사례
 
-const buttonClasses = cn(
-  'px-4 py-2 rounded shadow-md',
-  'bg-blue-500 hover:bg-blue-700',
-  'text-white hover:text-white',
-);
+### 컴포넌트 구조
 
-<div className={buttonClasses}>Button</div>
-```
+- 함수형 컴포넌트와 훅 사용
+  ```typescript
+  const KeywordCard: React.FC<KeywordCardProps> = ({ keyword, score }) => {
+    const { isFavorite, toggleFavorite } = useFavorites(keyword);
+    // ...
+  }
+  ```
 
-## 2. 코드 구조 및 조직
+- 컴포넌트는 단일 책임 원칙 준수
+- Props는 구조 분해 할당으로 접근
 
-### 2.1 파일 구성
+### 상태 관리
 
-- 모든 컴포넌트는 자체 파일에 정의
-- 복잡한 컴포넌트는 하위 컴포넌트로 분리
-- 파일 이름은 PascalCase로 작성 (예: `UserProfile.tsx`)
-- 관련 유틸리티/헬퍼 함수는 `utils` 디렉토리에 배치
-- 페이지 및 라우트는 App Router 패턴 준수
+- 상태 관리는 가능한 훅으로 추상화
+  ```typescript
+  function useKeywordData(keywordId: string) {
+    const [data, setData] = useState<KeywordData | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    // ...
+    return { data, isLoading, refresh };
+  }
+  ```
 
-```
-app/
-├── api/            # API 라우트
-├── components/     # 공유 컴포넌트
-│   ├── ui/         # UI 기본 요소 
-│   └── forms/      # 폼 컴포넌트
-├── hooks/          # 커스텀 훅
-├── lib/            # 유틸리티 및 서비스
-├── (routes)/       # 페이지 라우트
-```
+- Context API는 전역 상태에만 사용
+- 컴포넌트 상태 로직은 커스텀 훅으로 추출
 
-### 2.2 모듈 임포트/익스포트
+### Next.js 특화 패턴
 
-- 타입/인터페이스는 별도 파일로 분리하여 중앙 관리
-- 절대 경로 임포트 사용 (`@/app/components` 형식)
-- 임포트 순서: 1) 외부 라이브러리, 2) 내부 모듈, 3) 타입, 4) 스타일
-- 배럴 파일(`index.ts`)을 통한 내보내기 구성
+- 서버 컴포넌트와 클라이언트 컴포넌트 구분
+  ```typescript
+  // 클라이언트 컴포넌트
+  'use client';
+  
+  // 서버 컴포넌트 (명시적 표기 불필요)
+  ```
 
-```typescript
-// 잘못된 예
-import React from 'react';
-import styles from './styles.module.css';
-import { UserData } from '../../../types';
-import { Button } from '../../components';
-import { fetchData } from '../api';
+- 페이지 성능을 위한 정적 및 동적 렌더링 전략 활용
+- API 라우트는 Edge Runtime 활용 (필요 시)
 
-// 올바른 예
-import React from 'react';
+## 성능 최적화
 
-import { fetchData } from '@/app/lib/api';
-import { Button } from '@/app/components/ui';
-import type { UserData } from '@/app/types';
+### 렌더링 최적화
 
-import styles from './styles.module.css';
-```
+- `useMemo`와 `useCallback`을 활용한 불필요한 렌더링 방지
+  ```typescript
+  const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
+  const memoizedCallback = useCallback(() => doSomething(a, b), [a, b]);
+  ```
 
-## 3. 컴포넌트 설계
+- 렌더링 비용이 높은 컴포넌트는 `React.memo` 사용
+- 불필요한 상태 업데이트 방지
 
-### 3.1 컴포넌트 구조
+### 데이터 로딩 최적화
 
-- 각 컴포넌트는 단일 책임 원칙 준수
-- Props는 명시적으로 인터페이스 정의
-- 컴포넌트 매개변수 구조분해할당 사용
-- 필요 시 `React.memo()` 사용하여 불필요한 리렌더링 방지
+- SWR 또는 React Query와 같은 데이터 페칭 라이브러리 활용
+- 페이지 이동 간 상태 유지를 위한 캐싱 전략 구현
+- 필요 시 지연 로딩 및 데이터 프리패칭 적용
 
-```tsx
-// 잘못된 예
-const UserCard = (props) => {
-  return (
-    <div>
-      <h2>{props.name}</h2>
-      <p>{props.email}</p>
-      <button onClick={props.onClick}>View Profile</button>
-    </div>
+## 코드 주석
+
+### 주석 작성 가이드
+
+- 주석은 "왜(Why)" 그리고 "무엇(What)"에 초점
+- JSDoc 형식 주석 사용
+  ```typescript
+  /**
+   * 키워드 점수에 기반한 추천 배지를 생성
+   * @param score - 0-100 사이의 키워드 점수
+   * @returns 적절한 추천 수준 배지 컴포넌트
+   */
+  function getRecommendationBadge(score: number): JSX.Element { ... }
+  ```
+
+- 복잡한 로직에는 설명 추가
+- TODO 주석에는 JIRA 이슈 ID 포함
+  ```typescript
+  // TODO(KP-123): 키워드 분석 알고리즘 개선
+  ```
+
+### 코드 자체 설명력 높이기
+
+- 주석을 많이 쓰는 대신 명확한 이름의 변수와 함수 사용
+- 복잡한 조건문은 설명적인 변수로 추출
+  ```typescript
+  // 지양할 사항:
+  if (score > 80 && difficulty < 30 && volume > 1000) { ... }
+  
+  // 권장 사항:
+  const isHighValueKeyword = score > 80 && difficulty < 30 && volume > 1000;
+  if (isHighValueKeyword) { ... }
+  ```
+
+## CSS 및 스타일링
+
+### Tailwind CSS 사용 가이드
+
+- 클래스 이름은 알파벳 순으로 정렬
+- 추상화가 필요한 경우 컴포넌트로 분리
+- 과도한 중첩 및 조건부 클래스는 다음과 같이 분리:
+  ```typescript
+  const buttonClasses = clsx(
+    "px-4 py-2 rounded",
+    {
+      "bg-blue-500 hover:bg-blue-600": variant === "primary",
+      "bg-gray-500 hover:bg-gray-600": variant === "secondary",
+      "opacity-50 cursor-not-allowed": disabled
+    }
   );
-};
+  ```
 
-// 올바른 예
-interface UserCardProps {
-  name: string;
-  email: string;
-  onClick: () => void;
-}
+### 반응형 디자인
 
-const UserCard = ({ name, email, onClick }: UserCardProps) => {
-  return (
-    <div className="p-4 border rounded-lg shadow-sm">
-      <h2 className="text-xl font-semibold">{name}</h2>
-      <p className="text-gray-600">{email}</p>
-      <button 
-        onClick={onClick}
-        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-      >
-        View Profile
-      </button>
-    </div>
-  );
-};
+- 모바일 우선 접근법 사용
+- Tailwind 반응형 클래스 활용 (예: `md:flex lg:grid`)
+- 미디어 쿼리 대신 Tailwind 브레이크포인트 사용
 
-export default React.memo(UserCard);
-```
+## 테스트 코드 품질
 
-### 3.2 상태 관리
+### 테스트 구조
 
-- 로컬 상태: React `useState` 사용
-- 컴포넌트 간 상태 공유: React Context API 사용
-- 복잡한 상태 로직: 적절한 커스텀 훅으로 분리
-- 상태 업데이트: 함수형 업데이트 사용 (`setState(prev => updated)`)
-
-```tsx
-// 잘못된 예
-const Counter = () => {
-  const [count, setCount] = useState(0);
-  
-  const increment = () => {
-    setCount(count + 1);
-  };
-  
-  // ...
-};
-
-// 올바른 예
-const Counter = () => {
-  const [count, setCount] = useState(0);
-  
-  const increment = useCallback(() => {
-    setCount((prevCount) => prevCount + 1);
-  }, []);
-  
-  // ...
-};
-```
-
-## 4. 성능 최적화
-
-### 4.1 메모이제이션
-
-- `useMemo`: 계산 비용이 높은 값 메모이제이션
-- `useCallback`: 자식 컴포넌트에 전달되는 콜백 함수 메모이제이션
-- 의존성 배열 정확하게 지정
-
-```tsx
-// 잘못된 예
-const Component = ({ data, onUpdate }) => {
-  const processedData = expensiveCalculation(data);
-  
-  const handleUpdate = () => {
-    onUpdate(data);
-  };
-  
-  return <ChildComponent data={processedData} onUpdate={handleUpdate} />;
-};
-
-// 올바른 예
-const Component = ({ data, onUpdate }) => {
-  const processedData = useMemo(() => {
-    return expensiveCalculation(data);
-  }, [data]);
-  
-  const handleUpdate = useCallback(() => {
-    onUpdate(data);
-  }, [data, onUpdate]);
-  
-  return <ChildComponent data={processedData} onUpdate={handleUpdate} />;
-};
-```
-
-### 4.2 Code Splitting
-
-- 다이나믹 임포트로 라우트별 코드 분할
-- 큰 컴포넌트/라이브러리 지연 로딩
-
-```tsx
-// 잘못된 예
-import LargeComponent from '@/app/components/LargeComponent';
-
-// 올바른 예
-import dynamic from 'next/dynamic';
-
-const LargeComponent = dynamic(() => import('@/app/components/LargeComponent'), {
-  loading: () => <p>Loading...</p>,
-});
-```
-
-## 5. 에러 처리
-
-### 5.1 에러 경계
-
-- 컴포넌트 트리의 일부를 격리하기 위한 에러 경계 구현
-- 에러 발생 시 대체 UI 제공
-
-```tsx
-// app/components/ErrorBoundary.tsx
-'use client';
-
-import React, { ErrorInfo } from 'react';
-
-interface ErrorBoundaryProps {
-  fallback: React.ReactNode;
-  children: React.ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
-
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
-  }
-
-  render(): React.ReactNode {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-
-    return this.props.children;
-  }
-}
-
-export default ErrorBoundary;
-```
-
-### 5.2 비동기 에러 처리
-
-- `try/catch` 블록을 사용하여 비동기 작업 에러 처리
-- 에러 상태를 사용자에게 시각적으로 표시
-- 일관된 에러 메시지 형식 사용
-
-```tsx
-// 잘못된 예
-const fetchData = async () => {
-  const response = await fetch('/api/data');
-  const data = await response.json();
-  return data;
-};
-
-// 올바른 예
-const fetchData = async () => {
-  try {
-    const response = await fetch('/api/data');
-    
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Failed to fetch data:', error);
-    throw error; // 상위 호출자에게 에러 전파
-  }
-};
-```
-
-## 6. 테스트
-
-### 6.1 단위 테스트
-
-- 각 컴포넌트/유틸리티 함수에 대한 단위 테스트 작성
-- Jest 및 React Testing Library 사용
-- 테스트 파일 위치: 테스트 대상 파일과 동일한 디렉토리에 `*.test.tsx` 형식으로 배치
-
-```tsx
-// Button.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import Button from './Button';
-
-describe('Button', () => {
-  it('renders correctly', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
+- 테스트 파일은 테스트 대상 파일과 동일한 디렉토리에 위치
+- 테스트 이름은 설명적으로 작성
+  ```typescript
+  describe('KeywordAnalyzer', () => {
+    it('should correctly calculate score based on volume and competition', () => {
+      // ...
+    });
   });
+  ```
 
-  it('calls onClick when clicked', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Click me</Button>);
-    fireEvent.click(screen.getByText('Click me'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
-  });
-});
-```
+### 테스트 범위
 
-### 6.2 통합 테스트
+- 모든 유틸리티 함수는 단위 테스트 작성
+- 중요 컴포넌트는 통합 테스트 작성
+- Edge 케이스 및 오류 시나리오도 테스트
 
-- 여러 컴포넌트/기능의 상호작용 테스트
-- 실제 사용자 시나리오 기반 테스트 작성
-- 테스트 더블(mock)을 사용하여 외부 의존성 격리
+## 코드 리뷰 가이드라인
 
-## 7. 접근성(A11Y)
+### 코드 리뷰 체크리스트
 
-- 시맨틱 HTML 요소 사용
-- ARIA 속성 적절히 사용
-- 키보드 네비게이션 지원
-- 적절한 색상 대비 유지
-- 화면 리더 호환성 확인
+1. 코딩 표준 준수
+2. 테스트 커버리지 충분성
+3. 성능 고려사항
+4. 보안 문제 검토
+5. 문서화 적절성
 
-```tsx
-// 잘못된 예
-<div onClick={handleClick}>Click me</div>
+### 피드백 제공 방법
 
-// 올바른 예
-<button 
-  onClick={handleClick}
-  aria-label="Action button"
->
-  Click me
-</button>
-```
+- 건설적이고 구체적인 피드백 제공
+- 코드에 대한 피드백을 개인적인 비판으로 표현하지 않기
+- 개선 방법 제안 포함
 
-## 8. 코드 리뷰 가이드라인
+## 관련 문서
 
-### 8.1 리뷰 프로세스
-
-1. Pull Request(PR) 생성 시 명확한 설명 제공
-2. PR은 자체 포함적이고 작은 단위로 분할
-3. 코드 리뷰어는 24시간 이내에 피드백 제공
-4. 모든 코멘트는 건설적이고 구체적이어야 함
-
-### 8.2 PR 체크리스트
-
-- [ ] ESLint/Prettier 검사 통과
-- [ ] 기존 테스트 통과
-- [ ] 새 코드에 대한 테스트 추가
-- [ ] 문서화 업데이트(필요 시)
-- [ ] 브랜치 최신 상태 유지(리베이스)
-- [ ] 불필요한 콘솔 로그 제거
-- [ ] 성능 영향 고려
-
-## 9. 코드 문서화
-
-### 9.1 JSDoc 주석
-
-- 모든 함수와 컴포넌트에 JSDoc 주석 추가
-- 매개변수, 반환 유형, 예외 등 문서화
-
-```typescript
-/**
- * 사용자 정보를 가져오는 함수
- * @param {string} userId - 조회할 사용자의 ID
- * @returns {Promise<User>} 사용자 정보 객체
- * @throws {Error} 사용자를 찾을 수 없는 경우
- */
-export const fetchUser = async (userId: string): Promise<User> => {
-  // 구현...
-};
-```
-
-### 9.2 인라인 주석
-
-- 복잡한 로직에 인라인 주석 추가
-- "왜" 그렇게 구현했는지 설명(구현이 명확하지 않은 경우)
-- TODO/FIXME 주석은 이슈 번호 포함
-
-```typescript
-// 잘못된 예
-// 사용자 데이터 가져오기
-const data = await fetchUsers();
-
-// 올바른 예
-// GraphQL 쿼리가 너무 느려서 REST API로 대체함 (#123)
-const data = await fetchUsersRest();
-
-// TODO(#456): 캐싱 구현으로 성능 개선 필요
-```
-
----
-
-이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
-
-최종 업데이트: 2023-05-04 
+- [TestingStrategy.md](./TestingStrategy.md): 테스트 전략 문서
+- [PerformanceOptimization.md](./PerformanceOptimization.md): 성능 최적화 가이드
+- [SecurityGuidelines.md](./SecurityGuidelines.md): 보안 관련 가이드라인

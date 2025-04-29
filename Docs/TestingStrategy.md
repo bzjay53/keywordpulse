@@ -1,509 +1,369 @@
-# KeywordPulse 테스트 전략 문서
+# KeywordPulse 테스트 전략
 
-이 문서는 KeywordPulse 프로젝트의 테스트 전략과 구현 방법을 설명합니다.
+## 목차
+- [개요](#개요)
+- [테스트 유형](#테스트-유형)
+- [테스트 도구](#테스트-도구)
+- [테스트 구조](#테스트-구조)
+- [테스트 커버리지](#테스트-커버리지)
+- [테스트 자동화](#테스트-자동화)
+- [테스트 환경](#테스트-환경)
+- [테스트 데이터 관리](#테스트-데이터-관리)
+- [테스트 모범 사례](#테스트-모범-사례)
+- [특별한 테스트 시나리오](#특별한-테스트-시나리오)
+- [테스트 유지 관리](#테스트-유지-관리)
+- [관련 문서](#관련-문서)
 
-## 1. 테스트 원칙
+## 개요
 
-### 1.1 테스트 철학
+KeywordPulse의 테스트 전략은 애플리케이션의 안정성, 신뢰성, 사용자 경험을 보장하기 위해 설계되었습니다. 이 문서는 프로젝트의 테스트 접근 방식, 도구, 모범 사례 및 프로세스를 정의합니다.
 
-KeywordPulse 프로젝트의
- 테스트는 다음 원칙을 따릅니다:
+## 테스트 유형
 
-- **테스트 피라미드**: 단위 테스트를 기반으로 하고, 통합 테스트와 E2E 테스트가 보완하는 구조
-- **독립성**: 각 테스트는 독립적으로 실행 가능하며 다른 테스트에 의존하지 않음
-- **신뢰성**: 테스트 결과는 일관되고 예측 가능해야 함 (깜박이는 테스트 방지)
-- **유지보수성**: 테스트 코드도 제품 코드와 동일한 품질 표준 적용
-- **속도**: 테스트 실행은 가능한 빠르게 진행되어야 함
+KeywordPulse 프로젝트는 다음과 같은 테스트 유형을 활용합니다:
 
-### 1.2 정적 내보내기 특별 고려사항
+### 단위 테스트
+- **대상**: 개별 함수, 훅, 컴포넌트
+- **도구**: Jest, React Testing Library
+- **목표**: 개별 모듈의 기능 검증, 엣지 케이스 처리 확인
+- **범위**: 
+  - 유틸리티 함수
+  - 커스텀 훅
+  - UI 컴포넌트 (독립적인 동작)
+  - API 핸들러 로직
 
-Next.js 정적 내보내기(Static Export) 환경에서는 다음 사항을 특별히 고려합니다:
+### 통합 테스트
+- **대상**: 여러 컴포넌트나 모듈 간의 상호 작용
+- **도구**: Jest, React Testing Library, MSW(Mock Service Worker)
+- **목표**: 컴포넌트 간 상호 작용 및 데이터 흐름 검증
+- **범위**:
+  - 폼 제출 및 검증
+  - API 호출 및 데이터 표시
+  - 상태 관리 로직
+  - 복잡한 UI 워크플로우
 
-- **클라이언트 중심 테스트**: 서버 사이드 기능에 대한 제한적 테스트
-- **Edge Runtime 테스트**: API 라우트에 대한 별도 테스트 전략 필요
-- **환경 변수 처리**: 빌드 타임과 런타임 환경 변수 차이 고려
+### E2E(End-to-End) 테스트
+- **대상**: 전체 애플리케이션 워크플로우
+- **도구**: Cypress
+- **목표**: 실제 사용자 시나리오를 시뮬레이션하여 전체 시스템 검증
+- **범위**:
+  - 사용자 인증 및 권한 부여
+  - 검색 및 분석 워크플로우
+  - 결제 및 등록 프로세스
+  - 주요 기능 전체 흐름
 
-## 2. 테스트 유형 및 도구
+### 성능 테스트
+- **대상**: 애플리케이션 성능 및 로딩 시간
+- **도구**: Lighthouse, WebPageTest, web-vitals
+- **목표**: 주요 성능 메트릭 모니터링 및 개선
+- **범위**:
+  - 페이지 로드 시간
+  - 웹 바이탈(CLS, LCP, FID 등)
+  - 번들 크기
+  - API 응답 시간
 
-### 2.1 단위 테스트
+### 접근성 테스트
+- **대상**: UI 컴포넌트 및 페이지
+- **도구**: axe-core, Lighthouse
+- **목표**: WCAG 가이드라인 준수 확인
+- **범위**:
+  - 키보드 탐색
+  - 스크린 리더 호환성
+  - 색상 대비
+  - ARIA 속성 검증
 
-**목적**: 개별 함수, 컴포넌트, 훅의 독립적인 기능 검증
+## 테스트 도구
 
-**도구**:
-- Jest: 테스트 러너 및 검증
-- React Testing Library: 컴포넌트 테스트
-- jest-dom: DOM 관련 검증 확장
+KeywordPulse는 다음 도구를 활용합니다:
 
-**대상 코드**:
-- 유틸리티 함수
-- 커스텀 훅
-- UI 컴포넌트
-- 상태 관리 로직
+| 도구 | 용도 | 설정 파일 |
+|------|------|----------|
+| Jest | 단위 및 통합 테스트 프레임워크 | jest.config.js |
+| React Testing Library | 컴포넌트 테스트 | N/A |
+| Testing Library User Event | 사용자 상호작용 시뮬레이션 | N/A |
+| MSW (Mock Service Worker) | API 요청 모킹 | src/mocks/handlers.js |
+| Cypress | E2E 테스트 | cypress.config.js |
+| axe-core | 접근성 테스트 | N/A |
+| Lighthouse CI | 성능 및 접근성 자동화 | .lighthouserc.js |
 
-**예시**:
+## 테스트 구조
 
-```tsx
-// src/components/Button.test.tsx
-import { render, screen, fireEvent } from '@testing-library/react';
-import { Button } from './Button';
+### 파일 구조
 
-describe('Button', () => {
-  test('renders with correct text', () => {
-    render(<Button>Click me</Button>);
-    expect(screen.getByRole('button')).toHaveTextContent('Click me');
+테스트 파일은 다음 구조를 따릅니다:
+
+```
+keywordpulse/
+├── app/
+│   ├── components/
+│   │   ├── KeywordCard.tsx
+│   │   └── __tests__/
+│   │       ├── KeywordCard.test.tsx      # 단위 테스트
+│   │       └── KeywordCard.int.test.tsx  # 통합 테스트
+│   ├── lib/
+│   │   ├── analytics.ts
+│   │   └── __tests__/
+│   │       └── analytics.test.ts
+├── tests/
+│   ├── e2e/                     # Cypress E2E 테스트
+│   │   ├── search.cy.js
+│   │   └── auth.cy.js
+│   ├── fixtures/                # 테스트 데이터
+│   │   └── keywords.json
+│   └── utils/                   # 테스트 유틸리티
+│       └── testHelpers.ts
+```
+
+### 테스트 네이밍
+
+```typescript
+// 단위 테스트
+describe('KeywordCard', () => {
+  it('renders keyword title and score', () => {});
+  it('shows recommendation badge based on score', () => {});
+  it('applies correct color based on score threshold', () => {});
+});
+
+// 통합 테스트
+describe('Search Flow', () => {
+  it('fetches and displays search results when form is submitted', async () => {});
+  it('shows error message when API returns error', async () => {});
+});
+```
+
+## 테스트 커버리지
+
+### 커버리지 목표
+
+| 구성 요소 | 최소 커버리지 목표 |
+|----------|-----------------|
+| 유틸리티 함수 | 90% |
+| 커스텀 훅 | 85% |
+| UI 컴포넌트 | 80% |
+| API 라우트 | 85% |
+| 전체 코드베이스 | 75% |
+
+### 커버리지 보고
+
+- 모든 PR에서 테스트 커버리지 확인
+- 정기적인 커버리지 리포트 생성 및 검토
+- 커버리지가 감소하는 PR 승인 전 검토
+
+```bash
+# 커버리지 보고서 생성
+npm run test:coverage
+```
+
+## 테스트 자동화
+
+### CI/CD 통합
+
+GitHub Actions 워크플로우에서 다음 단계를 자동화합니다:
+
+1. **빌드 검증**: 
+   - 코드 변경 사항이 빌드 가능한지 확인
+
+2. **단위 및 통합 테스트**: 
+   - 모든 테스트 실행
+   - 커버리지 보고서 생성
+
+3. **E2E 테스트**: 
+   - 주요 사용자 흐름 검증
+   - 시각적 회귀 테스트 
+
+4. **성능 및 접근성 검사**: 
+   - Lighthouse CI를 통한 스코어 측정
+   - 임계값 미달 시 경고
+
+## 테스트 환경
+
+### 환경 구성
+
+| 환경 | 용도 | 데이터 | 설정 |
+|------|------|-------|------|
+| 로컬 | 개발 중 테스트 | 모의 데이터 | `.env.test.local` |
+| CI | 자동화된 테스트 | 고정 테스트 데이터 | `.env.test` |
+| 스테이징 | 통합 테스트 | 샘플링된 프로덕션 데이터 | `.env.staging` |
+
+### 환경 변수
+
+테스트용 환경 변수는 `.env.test` 파일에 정의합니다:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+SUPABASE_URL=https://test-instance.supabase.co
+SUPABASE_ANON_KEY=test-anon-key
+```
+
+## 테스트 데이터 관리
+
+### 테스트 픽스처
+
+테스트 데이터는 고정 픽스처로 관리합니다:
+
+```typescript
+// tests/fixtures/keywords.json
+export const testKeywords = [
+  {
+    id: "1",
+    keyword: "react hooks tutorial",
+    volume: 18500,
+    difficulty: 45,
+    score: 78,
+    createdAt: "2023-10-20T12:00:00Z"
+  },
+  // ...
+];
+```
+
+### 데이터 시딩
+
+통합 테스트를 위한 데이터베이스 시딩:
+
+```typescript
+// tests/utils/seedTestDatabase.ts
+export async function seedTestDatabase() {
+  const supabase = createTestClient();
+  await supabase.from('keywords').delete().neq('id', '0');
+  await supabase.from('keywords').insert(testKeywords);
+}
+```
+
+## 테스트 모범 사례
+
+### 단위 테스트
+
+```typescript
+// Good unit test example
+describe('calculateKeywordScore', () => {
+  it('returns high score for high volume and low difficulty', () => {
+    expect(calculateKeywordScore({ volume: 10000, difficulty: 20 })).toBeGreaterThan(80);
   });
 
-  test('calls onClick handler when clicked', () => {
+  it('returns low score for low volume and high difficulty', () => {
+    expect(calculateKeywordScore({ volume: 100, difficulty: 90 })).toBeLessThan(30);
+  });
+
+  it('handles edge cases correctly', () => {
+    expect(calculateKeywordScore({ volume: 0, difficulty: 0 })).toBe(0);
+    expect(calculateKeywordScore({ volume: 100000, difficulty: 100 })).toBe(50);
+  });
+});
+```
+
+### 컴포넌트 테스트
+
+```typescript
+// Good component test example
+describe('KeywordCard', () => {
+  it('renders keyword information correctly', () => {
+    const keyword = { 
+      id: '1', 
+      keyword: 'test keyword', 
+      score: 85, 
+      volume: 5000 
+    };
+    
+    render(<KeywordCard keyword={keyword} />);
+    
+    expect(screen.getByText('test keyword')).toBeInTheDocument();
+    expect(screen.getByText('5,000')).toBeInTheDocument();
+    expect(screen.getByText('강력 추천')).toBeInTheDocument();
+  });
+
+  it('calls onClick handler when card is clicked', () => {
     const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Click me</Button>);
-    fireEvent.click(screen.getByRole('button'));
+    
+    render(<KeywordCard keyword={{ id: '1', keyword: 'test' }} onClick={handleClick} />);
+    
+    userEvent.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });
 ```
 
-### 2.2 통합 테스트
-
-**목적**: 여러 컴포넌트 또는 기능 간의 상호작용 검증
-
-**도구**:
-- Jest
-- React Testing Library
-- MSW(Mock Service Worker): API 모킹
-
-**대상 코드**:
-- 페이지 컴포넌트
-- 데이터 페칭 로직
-- 폼 제출 흐름
-- 컨텍스트 제공자와 소비자 간 상호작용
-
-**예시**:
-
-```tsx
-// src/pages/Login.test.tsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { rest } from 'msw';
-import { setupServer } from 'msw/node';
-import { LoginPage } from './LoginPage';
-
-const server = setupServer(
-  rest.post('/api/login', (req, res, ctx) => {
-    return res(ctx.json({ success: true }));
-  })
-);
-
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
-
-test('submits login form and handles successful response', async () => {
-  render(<LoginPage />);
-  
-  fireEvent.change(screen.getByLabelText(/email/i), {
-    target: { value: 'user@example.com' }
-  });
-  
-  fireEvent.change(screen.getByLabelText(/password/i), {
-    target: { value: 'password123' }
-  });
-  
-  fireEvent.click(screen.getByRole('button', { name: /login/i }));
-  
-  await waitFor(() => {
-    expect(screen.getByText(/login successful/i)).toBeInTheDocument();
-  });
-});
-```
-
-### 2.3 E2E 테스트
-
-**목적**: 실제 사용자 시나리오 및 전체 애플리케이션 흐름 검증
-
-**도구**:
-- Playwright: 브라우저 자동화 및 E2E 테스트
-
-**대상 코드**:
-- 핵심 사용자 경로
-- 인증 및 권한 흐름
-- 복잡한 다단계 프로세스
-
-**예시**:
+### API 테스트
 
 ```typescript
-// e2e/auth.spec.ts
-import { test, expect } from '@playwright/test';
+// Good API test example
+jest.mock('@/app/lib/supabaseClient');
 
-test.describe('Authentication flow', () => {
-  test('allows user to log in and access protected content', async ({ page }) => {
-    // 로그인 페이지 방문
-    await page.goto('/login');
-    
-    // 로그인 폼 작성 및 제출
-    await page.fill('input[name="email"]', 'user@example.com');
-    await page.fill('input[name="password"]', 'password123');
-    await page.click('button[type="submit"]');
-    
-    // 리다이렉트 및 보호된 콘텐츠 확인
-    await expect(page).toHaveURL('/dashboard');
-    await expect(page.locator('h1')).toContainText('Dashboard');
-  });
-});
-```
-
-## 3. 테스트 구성 및 설정
-
-### 3.1 Jest 구성
-
-**jest.config.js**:
-
-```javascript
-/** @type {import('jest').Config} */
-const config = {
-  preset: 'ts-jest',
-  testEnvironment: 'jest-environment-jsdom',
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapper: {
-    '^@/app/(.*)$': '<rootDir>/app/$1',
-    '^@/lib/(.*)$': '<rootDir>/lib/$1',
-    '^@/components/(.*)$': '<rootDir>/components/$1',
-    '^@/hooks/(.*)$': '<rootDir>/hooks/$1',
-    '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
-  },
-  transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.jest.json' }],
-  },
-  testMatch: ['**/*.test.(ts|tsx)'],
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
-  collectCoverageFrom: [
-    'app/**/*.{ts,tsx}',
-    '!app/**/*.d.ts',
-    '!app/**/_*.{ts,tsx}',
-    '!app/api/**/*.{ts,tsx}',
-  ],
-  coverageThreshold: {
-    global: {
-      branches: 70,
-      functions: 70,
-      lines: 70,
-      statements: 70,
-    },
-  },
-};
-
-export default config;
-```
-
-**jest.setup.js**:
-
-```javascript
-// jest-dom adds custom jest matchers for asserting on DOM nodes.
-// allows you to do things like:
-// expect(element).toHaveTextContent(/react/i)
-import '@testing-library/jest-dom';
-
-// Mock Next.js router
-jest.mock('next/router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-    query: {},
-  }),
-}));
-
-// Mock Next.js image component
-jest.mock('next/image', () => ({
-  __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line jsx-a11y/alt-text
-    return <img {...props} />;
-  },
-}));
-
-// Set up environment variables for testing
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
-```
-
-### 3.2 Playwright 구성
-
-**playwright.config.ts**:
-
-```typescript
-import { defineConfig, devices } from '@playwright/test';
-
-export default defineConfig({
-  testDir: './e2e',
-  timeout: 30000,
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: [['html'], ['github']],
-  use: {
-    baseURL: 'http://localhost:3000',
-    trace: 'on-first-retry',
-    screenshot: 'only-on-failure',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
-  ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
-});
-```
-
-## 4. 테스트 모범 사례
-
-### 4.1 컴포넌트 테스트
-
-- **사용자 관점 테스트**: 내부 구현보다 사용자 상호작용에 초점
-- **과도한 모킹 지양**: 실제 동작과 가까운 테스트 작성
-- **접근성 고려**: `getByRole`, `getByLabelText` 등의 접근성 쿼리 우선 사용
-- **컨텍스트 제공**: 컨텍스트에 의존하는 컴포넌트는 `wrapper` 옵션 사용
-
-```tsx
-// 좋은 예시
-test('user can toggle theme', () => {
-  render(
-    <ThemeProvider initialTheme="light">
-      <ThemeToggle />
-    </ThemeProvider>
-  );
-  
-  const toggle = screen.getByRole('switch', { name: /dark mode/i });
-  expect(toggle).toHaveAttribute('aria-checked', 'false');
-  
-  fireEvent.click(toggle);
-  expect(toggle).toHaveAttribute('aria-checked', 'true');
-});
-```
-
-### 4.2 비동기 코드 테스트
-
-- **waitFor** 사용: 비동기 상태 변경 대기
-- **findBy** 쿼리: 요소가 나타날 때까지 기다림
-- **MSW** 활용: API 요청 모킹
-
-```tsx
-test('loads and displays user data', async () => {
-  render(<UserProfile userId="123" />);
-  
-  // 로딩 표시 확인
-  expect(screen.getByText(/loading/i)).toBeInTheDocument();
-  
-  // 데이터 로드 후 사용자 정보 표시 확인
-  expect(await screen.findByText(/john doe/i)).toBeInTheDocument();
-});
-```
-
-### 4.3 모킹 전략
-
-- **모듈 모킹**: `jest.mock()`을 사용해 외부 의존성 모킹
-- **Spy**: `jest.spyOn()`으로 함수 호출 추적
-- **모의 구현**: `jest.fn()`으로 간단한 함수 대체
-
-```tsx
-// Supabase 클라이언트 모킹 예시
-jest.mock('@/lib/supabaseClient', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: jest.fn().mockResolvedValue({
-        data: { user: { id: '123', email: 'user@example.com' } },
-        error: null,
-      }),
-    },
-  },
-}));
-```
-
-## 5. 테스트 자동화 및 CI/CD 통합
-
-### 5.1 CI 워크플로우
-
-**GitHub Actions 구성**:
-
-```yaml
-name: Test
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Node
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Lint
-        run: npm run lint
-        
-      - name: Run unit and integration tests
-        run: npm test -- --coverage
-        
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
-        
-      - name: Build
-        run: npm run build
-        
-      - name: Run E2E tests
-        run: npm run test:e2e
-        
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-```
-
-### 5.2 테스트 보고서 및 분석
-
-- **코드 커버리지**: Jest의 `--coverage` 플래그로 커버리지 보고서 생성
-- **시각적 회귀 테스트**: Playwright의 스크린샷 기능 활용
-- **성능 모니터링**: 테스트 실행 시간 추적
-
-## 6. 특수 테스트 시나리오
-
-### 6.1 인증 테스트
-
-1. **Supabase Auth 모킹**: 테스트용 가짜 인증 응답 생성
-2. **보호된 라우트 테스트**: 인증 상태에 따른 리다이렉션 검증
-3. **세션 관리**: 쿠키 및 로컬 스토리지 모킹
-
-```tsx
-// Auth 컨텍스트 모킹 예시
-jest.mock('@/lib/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: '123', email: 'user@example.com' },
-    isLoading: false,
-    signIn: jest.fn().mockResolvedValue({ error: null }),
-    signOut: jest.fn().mockResolvedValue({ error: null }),
-  }),
-}));
-```
-
-### 6.2 API 라우트 테스트 (Edge Runtime)
-
-1. **요청/응답 모킹**: Next.js 요청 및 응답 객체 시뮬레이션
-2. **헤더 및 쿠키 테스트**: 인증 헤더 및 쿠키 검증
-3. **에러 처리**: 다양한 오류 시나리오 테스트
-
-```typescript
-// API 라우트 테스트 예시
-import { NextRequest, NextResponse } from 'next/server';
-import { GET } from '@/app/api/user/route';
-
-describe('User API Route', () => {
-  test('returns user data for authenticated request', async () => {
-    const req = new NextRequest('http://localhost:3000/api/user', {
-      headers: {
-        'Authorization': 'Bearer test-token',
-      },
+describe('GET /api/keywords', () => {
+  it('returns keywords with correct format', async () => {
+    mockSupabaseQuery.mockResolvedValue({
+      data: testKeywords,
+      error: null
     });
     
-    const response = await GET(req);
+    const response = await fetch('/api/keywords');
     const data = await response.json();
     
     expect(response.status).toBe(200);
-    expect(data).toHaveProperty('id');
-    expect(data).toHaveProperty('email');
+    expect(data.keywords).toHaveLength(testKeywords.length);
+    expect(data.keywords[0]).toHaveProperty('keyword');
+    expect(data.keywords[0]).toHaveProperty('score');
   });
 });
 ```
 
-### 6.3 환경 변수 처리
+## 특별한 테스트 시나리오
 
-1. **테스트용 환경 변수**: Jest 설정에서 테스트용 환경 변수 정의
-2. **프로세스 환경 모킹**: `process.env` 객체 모킹
-3. **조건부 테스트**: 환경에 따른 조건부 테스트 실행
+### 비동기 작업 테스트
 
 ```typescript
-// 환경 변수 모킹 예시
-beforeEach(() => {
-  const originalEnv = process.env;
+it('loads and displays keyword data', async () => {
+  render(<KeywordDashboard />);
   
-  jest.resetModules();
-  process.env = { 
-    ...originalEnv,
-    NEXT_PUBLIC_FEATURE_FLAG: 'true',
-  };
-});
-
-afterEach(() => {
-  process.env = originalEnv;
+  // 로딩 상태 확인
+  expect(screen.getByText('로딩 중...')).toBeInTheDocument();
+  
+  // 데이터 로드 대기
+  await waitFor(() => {
+    expect(screen.queryByText('로딩 중...')).not.toBeInTheDocument();
+  });
+  
+  // 결과 확인
+  expect(screen.getByText('검색 결과')).toBeInTheDocument();
 });
 ```
 
-## 7. 테스트 우선순위 및 커버리지 목표
+### 에러 시나리오 테스트
 
-### 7.1 우선순위
+```typescript
+it('displays error message when API fails', async () => {
+  // API 오류 모킹
+  server.use(
+    rest.get('/api/keywords', (req, res, ctx) => {
+      return res(ctx.status(500), ctx.json({ error: 'Server error' }));
+    })
+  );
+  
+  render(<KeywordDashboard />);
+  
+  await waitFor(() => {
+    expect(screen.getByText('데이터를 불러오는 중 오류가 발생했습니다')).toBeInTheDocument();
+  });
+});
+```
 
-1. **핵심 비즈니스 로직**: 키워드 분석, 트렌드 처리 등 핵심 기능
-2. **인증 및 권한**: 사용자 로그인, 권한 검사 등 보안 관련 기능
-3. **데이터 변환**: API 응답 처리, 데이터 정규화 함수
-4. **UI 컴포넌트**: 사용자 상호작용이 많은 핵심 컴포넌트
-5. **에러 처리**: 에러 상태 및 복구 로직
+## 테스트 유지 관리
 
-### 7.2 커버리지 목표
+### 테스트 리팩토링
 
-- **전체 코드 커버리지**: 최소 70%
-- **핵심 비즈니스 로직**: 90% 이상
-- **UI 컴포넌트**: 80% 이상
-- **유틸리티 함수**: 85% 이상
+코드가 변경될 때 테스트도 함께 업데이트합니다:
 
-커버리지 목표는 지속적으로 검토하고 조정하며, 맹목적인 달성보다 중요 코드의 철저한 테스트를 우선시합니다.
+- 컴포넌트 인터페이스 변경 시 관련 테스트 조정
+- 유틸리티 함수 시그니처 변경 시 테스트 케이스 수정
+- 중복된 테스트 설정은 공통 헬퍼 함수로 추출
 
-## 8. 테스트 유지 관리
+### 플레이키(Flaky) 테스트 처리
 
-### 8.1 테스트 코드 리팩토링
+- 비결정적 테스트 식별 및 수정
+- 타임아웃 및 비동기 작업에 적절한 대기 시간 설정
+- 환경 의존성 최소화 
 
-- 새로운 기능이나 버그 수정과 함께 관련 테스트도 업데이트
-- 중복 테스트 코드는 공통 테스트 유틸리티로 추출
-- 테스트 데이터 팩토리 패턴 적용으로 테스트 설정 간소화
+## 관련 문서
 
-### 8.2 깨진 테스트 처리
-
-1. **즉시 수정**: CI에서 실패한 테스트는 최우선적으로 수정
-2. **임시 비활성화**: 수정이 복잡한 경우 `test.skip`으로 표시하고 이슈 등록
-3. **테스트 개선**: 불안정한 테스트는 더 견고하게 개선
-
----
-
-이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
-
-최종 업데이트: 2023-05-04 
+- [CodeQualityGuidelines.md](./CodeQualityGuidelines.md): 코드 품질 가이드라인
+- [CICDPipeline.md](./CICDPipeline.md): CI/CD 파이프라인 문서
+- [PerformanceOptimization.md](./PerformanceOptimization.md): 성능 최적화 가이드 

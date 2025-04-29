@@ -7,7 +7,8 @@
 | 문서 | 설명 | 주요 독자 | 최신 업데이트 |
 |-----|------|----------|------------|
 | [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 사용자 | 2023-04-29 |
-| [Architecture.md](./Architecture.md) | 프로젝트 구조도 및 아키텍처 | 개발자, 아키텍트 | 최근 |
+| [Architecture.md](./Architecture.md) | 프로젝트 아키텍처 설계 문서 | 개발자, 아키텍트 | 최근 |
+| [ProjectStructure.md](./ProjectStructure.md) | 프로젝트 구조 및 디렉토리 구성 | 개발자, 아키텍트 | 최근 |
 | [Dependencies.md](./Dependencies.md) | 의존성 관리 문서 | 개발자 | 최근 |
 | [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 | 2023-04-29 |
 | [EnvironmentVariablesGuide.md](./EnvironmentVariablesGuide.md) | 환경 변수 관리 지침 | 개발자, DevOps | 2023-04-29 |
@@ -79,6 +80,7 @@ graph TD
     A --> C[SETUP.md]
     A --> Y[EnvironmentVariablesGuide.md]
     
+    B --> PS[ProjectStructure.md]
     B --> D[Dependencies.md]
     B --> E[CodeQualityGuidelines.md]
     E --> E1[CodingStyleGuide.md]
@@ -133,6 +135,7 @@ libwys/
 ├── SETUP.md                   # 설정 가이드
 ├── Docs/                      # 문서 루트 디렉토리
 │   ├── Architecture.md        # 아키텍처 문서
+│   ├── ProjectStructure.md    # 프로젝트 구조 문서
 │   ├── Dependencies.md        # 의존성 문서
 │   ├── CodeQualityGuidelines.md # 코드 품질 가이드라인
 │   ├── CodingStyleGuide.md    # 코딩 스타일 가이드

@@ -18,6 +18,13 @@
         "installCommand": "npm install typescript @types/node @types/react @types/react-dom --save && npm install",
         "buildCommand": "NODE_OPTIONS=--max_old_space_size=4096 SKIP_TYPESCRIPT_CHECK=true NEXT_TELEMETRY_DISABLED=1 next build"
       }
+    },
+    {
+      "src": "build.js",
+      "use": "@vercel/node",
+      "config": {
+        "distDir": "out"
+      }
     }
   ],
   "routes": [
@@ -27,8 +34,13 @@
     }
   ],
   "installCommand": "npm install typescript --no-save && npm install",
-  "buildCommand": "npm run build",
+  "buildCommand": "node build.js",
   "outputDirectory": "out",
+  "override": {
+    "framework": "nextjs",
+    "buildCommand": "node build.js",
+    "outputDirectory": "out"
+  },
   "github": {
     "enabled": true,
     "silent": true

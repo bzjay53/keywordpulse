@@ -2,8 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // 정적 페이지로 내보내기 설정 (Vercel용으로 비활성화)
-  // output: 'export',
+  // 정적 페이지로 내보내기 설정 
+  output: 'export',
   // 외부 종속성 설정
   transpilePackages: ['next-auth'],
   // 실험적 기능 설정
@@ -11,8 +11,8 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp'],
     optimizeCss: true,
   },
-  // Vercel 배포를 위해 distDir 설정 수정
-  distDir: '.next',
+  // Vercel 배포를 위한 설정
+  distDir: 'out',
   trailingSlash: true,
   // 환경변수 설정
   env: {

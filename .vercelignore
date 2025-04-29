@@ -1,0 +1,5 @@
+# TypeScript 설정 파일 무시
+tsconfig.json
+tsconfig.*.json
+**/node_modules
+.next 

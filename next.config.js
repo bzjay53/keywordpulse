@@ -12,7 +12,7 @@ const nextConfig = {
     optimizeCss: true,
   },
   // 정적 내보내기에서 API 라우트 및 특정 페이지 제외
-  distDir: '.next',
+  distDir: 'out',
   trailingSlash: true,
   // 환경변수 설정
   env: {

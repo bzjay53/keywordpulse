@@ -1,5 +1,5 @@
 import React from 'react';
-import TrendDashboard from './TrendDashboard';
+import TrendDashboard from '../trends/TrendDashboard';
 
 export const metadata = {
   title: '키워드 트렌드 대시보드 | KeywordPulse',

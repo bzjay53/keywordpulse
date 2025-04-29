@@ -24,6 +24,7 @@
 | [PerformanceOptimization.md](./PerformanceOptimization.md) | 성능 최적화 전략 및 구현 지침 | 개발자 | 최근 |
 | [CollaborationGuide.md](./CollaborationGuide.md) | 팀 협업 방식 및 작업 흐름 | 모든 팀원 | 최근 |
 | [DocumentationGuidelines.md](./DocumentationGuidelines.md) | 문서 작성 표준 및 지침 | 모든 팀원 | 최근 |
+| [MonitoringSystem.md](./MonitoringSystem.md) | 모니터링 시스템 설계 및 구현 | 개발자, DevOps | 2023-11-30 |
 
 ## 3. 구현 및 참조 문서
 
@@ -102,6 +103,8 @@ graph TD
     S --> U[libwys_Keywordpulse Seo Meta.md]
     S --> Z
     
+    T --> MS[MonitoringSystem.md]
+    
     V[CollaborationGuide.md] --> W[DocumentationGuidelines.md]
     W --> X[DocumentMap.md]
 ```
@@ -137,6 +140,7 @@ libwys/
 │   ├── CICDPipeline.md        # CI/CD 파이프라인
 │   ├── SecurityGuidelines.md  # 보안 가이드라인
 │   ├── PerformanceOptimization.md # 성능 최적화
+│   ├── MonitoringSystem.md    # 모니터링 시스템 설계
 │   ├── CollaborationGuide.md  # 협업 가이드
 │   ├── DocumentationGuidelines.md # 문서화 가이드라인
 │   ├── DocumentMap.md         # 문서 맵 (이 문서)

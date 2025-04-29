@@ -1,293 +1,380 @@
 # KeywordPulse 코드 품질 가이드라인
 
-## 목차
-- [개요](#개요)
-- [코딩 표준](#코딩-표준)
-- [코드 구조화](#코드-구조화)
-- [TypeScript 모범 사례](#typescript-모범-사례)
-- [React 및 Next.js 모범 사례](#react-및-nextjs-모범-사례)
-- [성능 최적화](#성능-최적화)
-- [코드 주석](#코드-주석)
-- [CSS 및 스타일링](#css-및-스타일링)
-- [테스트 코드 품질](#테스트-코드-품질)
-- [코드 리뷰 가이드라인](#코드-리뷰-가이드라인)
-- [관련 문서](#관련-문서)
+이 문서는 KeywordPulse 프로젝트의 코드 품질을 유지하기 위한 표준, 관행 및 절차를 정의합니다. 모든 팀원은 코드 작성 및 리뷰 시 이 가이드라인을 참조해야 합니다.
 
-## 개요
+## 1. 코딩 표준
 
-이 문서는 KeywordPulse 프로젝트의 코드 품질을 유지하기 위한 가이드라인을 제공합니다. 이 가이드라인은 코드의 일관성, 유지보수성, 가독성을 보장하기 위한 것입니다.
+### 1.1 일반 원칙
 
-## 코딩 표준
+- **가독성**: 코드는 명확하고 이해하기 쉽게 작성합니다.
+- **일관성**: 프로젝트 전체에서 일관된 스타일과 패턴을 유지합니다.
+- **간결함**: 불필요한 코드를 제거하고 직관적인 해결책을 선호합니다.
+- **자체 문서화**: 코드는 가능한 한 스스로를 설명해야 합니다.
+- **테스트 용이성**: 모든 코드는 테스트 가능하게 설계합니다.
 
-### 명명 규칙
+### 1.2 TypeScript/JavaScript 표준
 
-- **변수 및 함수**: camelCase 사용
+#### 변수 및 함수 명명
+
+- **카멜 케이스(camelCase)** 사용: 변수, 함수, 메서드 이름에 적용
   ```typescript
+  // 올바른 예
   const userData = fetchUserData();
-  ```
-
-- **컴포넌트**: PascalCase 사용
-  ```typescript
-  const KeywordCard = ({ keyword }) => { ... };
-  ```
-
-- **인터페이스 및 타입**: PascalCase 사용, 인터페이스는 'I' 접두사 없이
-  ```typescript
-  interface UserData { ... }
-  type KeywordScore = { ... };
-  ```
-
-- **파일 이름**: 
-  - 컴포넌트: PascalCase (예: `KeywordCard.tsx`)
-  - 유틸리티 및 모듈: camelCase (예: `analyticsUtils.ts`)
-
-### 코드 포맷팅
-
-- ESLint와 Prettier를 사용하여 코드 포맷팅 일관성 유지
-- 들여쓰기는 2칸 사용
-- 한 줄 최대 길이: 100자
-- 세미콜론 사용
-- 작은따옴표 대신 큰따옴표 사용
-
-### 일관성 유지를 위한 도구
-
-```bash
-# 코드 포맷팅 검사
-npm run lint
-
-# 코드 포맷팅 자동 수정
-npm run lint:fix
-```
-
-## 코드 구조화
-
-### 파일 및 디렉토리 구조
-
-- 관련 기능은 동일한 디렉토리에 그룹화
-- 파일 크기는 300줄 이하로 유지 (컴포넌트 포함)
-- 컴포넌트는 다음과 같은 구조로 정리:
-  - 컴포넌트 인터페이스 정의
-  - 상수 및 헬퍼 함수
-  - 주요 컴포넌트 구현
-  - 내보내기 (export)
-
-### 모듈 분리
-
-큰 모듈은 다음과 같이 분리:
-
-```
-KeywordAnalysis/
-├── components/
-│   ├── AnalysisChart.tsx
-│   ├── KeywordTable.tsx
-│   └── ScoreCard.tsx
-├── hooks/
-│   ├── useKeywordData.ts
-│   └── useAnalytics.ts
-├── utils/
-│   ├── scoring.ts
-│   └── formatting.ts
-├── types.ts
-└── index.ts
-```
-
-## TypeScript 모범 사례
-
-### 타입 정의
-
-- 모든 함수 매개변수와 반환 값에 타입 지정
-  ```typescript
-  function calculateScore(keyword: string, factors: ScoreFactor[]): number { ... }
-  ```
-
-- 암시적 `any` 사용 금지
-- 복잡한 타입은 별도 인터페이스나 타입으로 분리
-  ```typescript
-  interface KeywordAnalysisResult {
-    score: number;
-    volume: number;
-    difficulty: number;
-    recommendations: Recommendation[];
-  }
-  ```
-
-### 타입 안전성
-
-- 타입 단언(`as`) 대신 타입 가드 사용
-  ```typescript
-  // 지양할 사항:
-  const result = someValue as AnalysisResult;
+  function calculateTotalScore() { /* ... */ }
   
-  // 권장 사항:
-  if (isAnalysisResult(someValue)) {
-    const result: AnalysisResult = someValue;
-    // ...
-  }
+  // 잘못된 예
+  const user_data = fetchUserData();
+  function calculate_total_score() { /* ... */ }
   ```
 
-- null과 undefined 처리에 Optional Chaining 및 Nullish Coalescing 사용
+- **파스칼 케이스(PascalCase)** 사용: 클래스, 인터페이스, 타입, 컴포넌트 이름에 적용
   ```typescript
-  const score = data?.analysis?.score ?? 0;
-  ```
-
-## React 및 Next.js 모범 사례
-
-### 컴포넌트 구조
-
-- 함수형 컴포넌트와 훅 사용
-  ```typescript
-  const KeywordCard: React.FC<KeywordCardProps> = ({ keyword, score }) => {
-    const { isFavorite, toggleFavorite } = useFavorites(keyword);
-    // ...
-  }
-  ```
-
-- 컴포넌트는 단일 책임 원칙 준수
-- Props는 구조 분해 할당으로 접근
-
-### 상태 관리
-
-- 상태 관리는 가능한 훅으로 추상화
-  ```typescript
-  function useKeywordData(keywordId: string) {
-    const [data, setData] = useState<KeywordData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    // ...
-    return { data, isLoading, refresh };
-  }
-  ```
-
-- Context API는 전역 상태에만 사용
-- 컴포넌트 상태 로직은 커스텀 훅으로 추출
-
-### Next.js 특화 패턴
-
-- 서버 컴포넌트와 클라이언트 컴포넌트 구분
-  ```typescript
-  // 클라이언트 컴포넌트
-  'use client';
+  // 올바른 예
+  interface UserProfile { /* ... */ }
+  class AuthenticationService { /* ... */ }
+  function UserDashboard() { /* ... */ }
   
-  // 서버 컴포넌트 (명시적 표기 불필요)
+  // 잘못된 예
+  interface userProfile { /* ... */ }
+  class authenticationService { /* ... */ }
   ```
 
-- 페이지 성능을 위한 정적 및 동적 렌더링 전략 활용
-- API 라우트는 Edge Runtime 활용 (필요 시)
-
-## 성능 최적화
-
-### 렌더링 최적화
-
-- `useMemo`와 `useCallback`을 활용한 불필요한 렌더링 방지
+- **상수는 대문자와 언더스코어** 사용
   ```typescript
-  const memoizedValue = useMemo(() => computeExpensiveValue(a, b), [a, b]);
-  const memoizedCallback = useCallback(() => doSomething(a, b), [a, b]);
-  ```
-
-- 렌더링 비용이 높은 컴포넌트는 `React.memo` 사용
-- 불필요한 상태 업데이트 방지
-
-### 데이터 로딩 최적화
-
-- SWR 또는 React Query와 같은 데이터 페칭 라이브러리 활용
-- 페이지 이동 간 상태 유지를 위한 캐싱 전략 구현
-- 필요 시 지연 로딩 및 데이터 프리패칭 적용
-
-## 코드 주석
-
-### 주석 작성 가이드
-
-- 주석은 "왜(Why)" 그리고 "무엇(What)"에 초점
-- JSDoc 형식 주석 사용
-  ```typescript
-  /**
-   * 키워드 점수에 기반한 추천 배지를 생성
-   * @param score - 0-100 사이의 키워드 점수
-   * @returns 적절한 추천 수준 배지 컴포넌트
-   */
-  function getRecommendationBadge(score: number): JSX.Element { ... }
-  ```
-
-- 복잡한 로직에는 설명 추가
-- TODO 주석에는 JIRA 이슈 ID 포함
-  ```typescript
-  // TODO(KP-123): 키워드 분석 알고리즘 개선
-  ```
-
-### 코드 자체 설명력 높이기
-
-- 주석을 많이 쓰는 대신 명확한 이름의 변수와 함수 사용
-- 복잡한 조건문은 설명적인 변수로 추출
-  ```typescript
-  // 지양할 사항:
-  if (score > 80 && difficulty < 30 && volume > 1000) { ... }
+  // 올바른 예
+  const MAX_RETRY_COUNT = 3;
   
-  // 권장 사항:
-  const isHighValueKeyword = score > 80 && difficulty < 30 && volume > 1000;
-  if (isHighValueKeyword) { ... }
+  // 잘못된 예
+  const maxRetryCount = 3;
   ```
 
-## CSS 및 스타일링
+#### 형식 및 구조
 
-### Tailwind CSS 사용 가이드
-
-- 클래스 이름은 알파벳 순으로 정렬
-- 추상화가 필요한 경우 컴포넌트로 분리
-- 과도한 중첩 및 조건부 클래스는 다음과 같이 분리:
+- 들여쓰기는 **2칸 공백**을 사용합니다.
+- 한 줄은 **80자 이내**로 제한합니다.
+- 중괄호는 같은 줄에서 시작합니다.
   ```typescript
-  const buttonClasses = clsx(
-    "px-4 py-2 rounded",
-    {
-      "bg-blue-500 hover:bg-blue-600": variant === "primary",
-      "bg-gray-500 hover:bg-gray-600": variant === "secondary",
-      "opacity-50 cursor-not-allowed": disabled
+  // 올바른 예
+  function example() {
+    if (condition) {
+      // 코드
     }
+  }
+  
+  // 잘못된 예
+  function example() 
+  {
+    if (condition) 
+    {
+      // 코드
+    }
+  }
+  ```
+
+- 세미콜론을 항상 사용합니다.
+- 문자열에는 작은따옴표 대신 큰따옴표를 사용합니다.
+
+#### 타입 정의
+
+- TypeScript의 강력한 타입 시스템을 활용합니다.
+- `any` 타입은 가능한 사용하지 않습니다.
+- 인터페이스와 타입에 의미 있는 이름을 사용합니다.
+- 범용 타입 정의는 별도 파일로 분리합니다.
+
+```typescript
+// 올바른 예
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+  preferences: UserPreferences;
+}
+
+// 잘못된 예
+interface Data {
+  id: any;
+  name: any;
+  email: any;
+  prefs: any;
+}
+```
+
+### 1.3 React 컴포넌트 표준
+
+#### 컴포넌트 구조
+
+- **함수형 컴포넌트** 사용을 권장합니다.
+- 각 컴포넌트는 단일 책임 원칙을 따릅니다.
+- 컴포넌트는 가능한 작고 재사용 가능하게 유지합니다.
+- JSX 내에서 복잡한 로직은 피합니다.
+
+```tsx
+// 올바른 예
+function UserProfile({ user }: UserProfileProps) {
+  return (
+    <div className="profile-container">
+      <h2>{user.name}</h2>
+      <UserDetails data={user} />
+      <UserActions userId={user.id} />
+    </div>
   );
-  ```
+}
 
-### 반응형 디자인
+// 잘못된 예
+function UserProfile({ user }: UserProfileProps) {
+  let detailsContent;
+  if (user.role === "admin") {
+    detailsContent = <div>관리자 정보: {user.adminInfo}</div>;
+  } else {
+    detailsContent = <div>일반 사용자 정보</div>;
+  }
+  
+  return (
+    <div className="profile-container">
+      <h2>{user.name}</h2>
+      {detailsContent}
+      <button onClick={() => fetch(`/api/users/${user.id}`).then(/* ... */)}>
+        데이터 로드
+      </button>
+    </div>
+  );
+}
+```
 
-- 모바일 우선 접근법 사용
-- Tailwind 반응형 클래스 활용 (예: `md:flex lg:grid`)
-- 미디어 쿼리 대신 Tailwind 브레이크포인트 사용
+#### 상태 관리
 
-## 테스트 코드 품질
+- 로컬 상태는 React 훅(`useState`, `useReducer`)을 사용합니다.
+- 컴포넌트 간 상태 공유는 Context API를 사용합니다.
+- 비즈니스 로직은 UI 컴포넌트와 분리합니다.
+- 사이드 이펙트는 `useEffect` 내에서 처리합니다.
 
-### 테스트 구조
+#### Props 및 상태
 
-- 테스트 파일은 테스트 대상 파일과 동일한 디렉토리에 위치
-- 테스트 이름은 설명적으로 작성
-  ```typescript
-  describe('KeywordAnalyzer', () => {
-    it('should correctly calculate score based on volume and competition', () => {
-      // ...
-    });
+- Props와 상태에 명시적인 타입을 정의합니다.
+- Props의 기본값을 설정합니다.
+- Props 분해 할당을 사용하여 가독성을 높입니다.
+
+```typescript
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+  variant?: "primary" | "secondary";
+  disabled?: boolean;
+}
+
+function Button({
+  label,
+  onClick,
+  variant = "primary",
+  disabled = false
+}: ButtonProps) {
+  // ...
+}
+```
+
+### 1.4 Next.js 표준
+
+- App Router 구조에 맞게 파일을 조직합니다.
+- API 라우트는 기능별로 구조화합니다.
+- 서버 컴포넌트와 클라이언트 컴포넌트의 명확한 구분을 유지합니다.
+- 중복되는 메타데이터 설정을 피하고 계층적으로 구성합니다.
+
+## 2. 코드 리팩토링 가이드
+
+### 2.1 리팩토링 원칙
+
+- 기능 변경 없이 코드 구조와 품질만 개선합니다.
+- 리팩토링은 작은 단위로 점진적으로 진행합니다.
+- 테스트를 사용하여 리팩토링 전후 동작이 동일한지 확인합니다.
+- 각 리팩토링은 문제와 해결 방법을 명확히 기록합니다.
+
+### 2.2 리팩토링 대상
+
+- **중복 코드**: 반복되는 코드는 함수, 유틸리티 또는 훅으로 추출합니다.
+- **긴 함수**: 함수가 너무 길면 작고 명확한 역할을 하는 함수들로 분리합니다.
+- **큰 컴포넌트**: 너무 많은 역할을 하는 컴포넌트는 작은 컴포넌트로 분해합니다.
+- **일관성 없는 스타일**: 코드베이스 전체에서 일관된 스타일을 유지합니다.
+- **복잡한 조건문**: 가능한 단순화하고 설명이 필요한 경우 주석을 추가합니다.
+
+### 2.3 성능 최적화
+
+- 불필요한 렌더링을 방지하기 위해 `React.memo`, `useMemo`, `useCallback`을 적절히 사용합니다.
+- 큰 목록을 렌더링할 때 가상화를 고려합니다.
+- 이미지와 자산을 최적화합니다.
+- 코드 분할을 통해 초기 로드 시간을 개선합니다.
+
+## 3. 코드 리뷰 프로세스
+
+### 3.1 리뷰 절차
+
+1. **PR 준비**: 
+   - 명확한 제목과 설명 포함
+   - 관련 이슈 연결
+   - 작은 단위의 변경사항을 포함
+
+2. **자체 리뷰**:
+   - PR 제출 전 자체 리뷰 수행
+   - 불필요한 console.log 및 주석 제거
+   - 코드가 스타일 가이드를 준수하는지 확인
+
+3. **리뷰 요청**:
+   - 최소 1명의 리뷰어를 지정
+   - 복잡한 변경의 경우 관련 도메인 전문가 포함
+
+4. **리뷰 제공**:
+   - 48시간 이내에 리뷰 완료
+   - 명확하고 건설적인 의견 제공
+   - 필요한 경우 대안 제시
+
+5. **리뷰 피드백 반영**:
+   - 모든 코멘트에 답변
+   - 합의된 변경사항 적용
+   - 해결된 코멘트 마크
+
+6. **병합**:
+   - 모든 리뷰어 승인 후 병합
+   - 병합 전 최신 메인 브랜치와 리베이스/병합
+
+### 3.2 코드 리뷰 체크리스트
+
+#### 기능
+
+- 코드가 요구 사항을 충족하는가?
+- 모든 에지 케이스를 처리하는가?
+- 오류 처리가 적절한가?
+
+#### 코드 품질
+
+- 코드가 가독성이 높고 이해하기 쉬운가?
+- 변수와 함수 이름이 의미 있게 지정되었는가?
+- 중복 코드가 없는가?
+- 함수와 컴포넌트가 단일 책임을 가지는가?
+
+#### 성능
+
+- 불필요한 렌더링이나 계산이 없는가?
+- 데이터 구조와 알고리즘이 효율적인가?
+- 비동기 작업이 적절하게 처리되는가?
+
+#### 테스트
+
+- 충분한 테스트 커버리지가 있는가?
+- 테스트 케이스가 유의미한가?
+- 모든 핵심 로직이 테스트되는가?
+
+#### 보안
+
+- 사용자 입력을 적절히 검증하고 소독하는가?
+- 민감한 정보가 노출되지 않는가?
+- 인증 및 권한 검사가 적절한가?
+
+## 4. 테스트 품질 표준
+
+### 4.1 단위 테스트
+
+- 각 유틸리티 함수 및 훅에 단위 테스트를 작성합니다.
+- 특정 기능을 격리하고 의존성을 모킹합니다.
+- 경계 조건과 예외 케이스를 테스트합니다.
+
+```typescript
+// 함수 예시
+export function calculateScore(keywords: string[]): number {
+  if (!keywords.length) return 0;
+  // 계산 로직...
+}
+
+// 테스트 예시
+describe('calculateScore', () => {
+  it('returns 0 for empty array', () => {
+    expect(calculateScore([])).toBe(0);
   });
-  ```
+  
+  it('calculates score correctly for valid keywords', () => {
+    expect(calculateScore(['test', 'keywords'])).toBe(/* 예상 값 */);
+  });
+});
+```
 
-### 테스트 범위
+### 4.2 통합 테스트
 
-- 모든 유틸리티 함수는 단위 테스트 작성
-- 중요 컴포넌트는 통합 테스트 작성
-- Edge 케이스 및 오류 시나리오도 테스트
+- 컴포넌트 간 상호 작용을 테스트합니다.
+- API 호출과 데이터 흐름을 테스트합니다.
+- 실제 의존성을 사용하여 테스트합니다.
 
-## 코드 리뷰 가이드라인
+### 4.3 E2E 테스트
 
-### 코드 리뷰 체크리스트
+- 핵심 사용자 흐름을 테스트합니다.
+- 실제 환경과 유사하게 설정합니다.
+- 성능 및 접근성 테스트를 포함합니다.
 
-1. 코딩 표준 준수
-2. 테스트 커버리지 충분성
-3. 성능 고려사항
-4. 보안 문제 검토
-5. 문서화 적절성
+## 5. 지속적 통합
 
-### 피드백 제공 방법
+- 모든 PR은 자동화된 린팅과 테스트를 통과해야 합니다.
+- 코드 품질 지표를 모니터링합니다.
+- 기술 부채는 정기적으로 해결합니다.
 
-- 건설적이고 구체적인 피드백 제공
-- 코드에 대한 피드백을 개인적인 비판으로 표현하지 않기
-- 개선 방법 제안 포함
+## 6. 문서화
 
-## 관련 문서
+### 6.1 코드 문서화
 
-- [TestingStrategy.md](./TestingStrategy.md): 테스트 전략 문서
-- [PerformanceOptimization.md](./PerformanceOptimization.md): 성능 최적화 가이드
-- [SecurityGuidelines.md](./SecurityGuidelines.md): 보안 관련 가이드라인
+- 복잡한 함수와 컴포넌트에 JSDoc 스타일 주석을 추가합니다.
+- API와 중요 기능에 참조 문서를 작성합니다.
+- TypeScript 타입을 통해 코드를 자체 문서화합니다.
+
+```typescript
+/**
+ * 키워드 점수를 계산합니다.
+ * 
+ * @param keywords - 분석할 키워드 배열
+ * @param options - 계산 옵션 (선택사항)
+ * @returns 0-100 사이의 점수
+ * 
+ * @example
+ * ```typescript
+ * const score = calculateKeywordScore(['seo', 'marketing']);
+ * console.log(score); // 75
+ * ```
+ */
+function calculateKeywordScore(
+  keywords: string[],
+  options?: ScoreOptions
+): number {
+  // 구현...
+}
+```
+
+### 6.2 README 및 기술 문서
+
+- 각 모듈에 명확한 README를 제공합니다.
+- 아키텍처와 주요 결정 사항을 문서화합니다.
+- 설치, 설정, 기여 가이드를 포함합니다.
+
+## 7. 접근성 표준
+
+- 모든 UI 컴포넌트는 WCAG 2.1 AA 표준을 준수해야 합니다.
+- 스크린 리더 호환성을 유지합니다.
+- 키보드 네비게이션을 지원합니다.
+- 충분한 색상 대비를 제공합니다.
+
+```tsx
+// 접근성을 위한 예시
+<button
+  onClick={handleSubmit}
+  aria-label="제출"
+  role="button"
+  tabIndex={0}
+>
+  <span className="icon">✓</span>
+</button>
+```
+
+## 8. 보안 표준
+
+- 사용자 입력은 항상 검증 및 소독합니다.
+- API 키와 비밀은 안전하게 관리합니다.
+- 인증과 권한 부여를 명확히 분리합니다.
+- 정기적인 보안 검토를 수행합니다.
+
+---
+
+이 가이드라인은 프로젝트가 발전함에 따라 지속적으로 업데이트될 예정입니다. 모든 팀원은 코드 품질 향상을 위한 제안을 할 수 있습니다.

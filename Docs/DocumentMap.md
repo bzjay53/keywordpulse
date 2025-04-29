@@ -17,6 +17,7 @@
 | 문서 | 설명 | 주요 독자 | 최신 업데이트 |
 |-----|------|----------|------------|
 | [CodeQualityGuidelines.md](./CodeQualityGuidelines.md) | 코드 품질 표준 및 모범 사례 | 개발자 | 최근 |
+| [CodingStyleGuide.md](./CodingStyleGuide.md) | 코드 작성 스타일 가이드라인 | 개발자 | 2023-11-30 |
 | [TestingStrategy.md](./TestingStrategy.md) | 테스트 전략 및 구현 지침 | 개발자, QA | 최근 |
 | [CICDPipeline.md](./CICDPipeline.md) | CI/CD 파이프라인 구성 및 작업 흐름 | 개발자, DevOps | 최근 |
 | [SecurityGuidelines.md](./SecurityGuidelines.md) | 보안 모범 사례 및 지침 | 개발자, 보안 담당자 | 최근 |
@@ -79,6 +80,7 @@ graph TD
     
     B --> D[Dependencies.md]
     B --> E[CodeQualityGuidelines.md]
+    E --> E1[CodingStyleGuide.md]
     
     F[libwys_Keywordpulse Wbs Plan.md] --> G[RAG_WBS.md]
     F --> H[libwys_Keywordpulse Refactoring Doc.md]
@@ -130,6 +132,7 @@ libwys/
 │   ├── Architecture.md        # 아키텍처 문서
 │   ├── Dependencies.md        # 의존성 문서
 │   ├── CodeQualityGuidelines.md # 코드 품질 가이드라인
+│   ├── CodingStyleGuide.md    # 코딩 스타일 가이드
 │   ├── TestingStrategy.md     # 테스트 전략
 │   ├── CICDPipeline.md        # CI/CD 파이프라인
 │   ├── SecurityGuidelines.md  # 보안 가이드라인
@@ -146,4 +149,4 @@ libwys/
 
 이 문서는 프로젝트의 진행 상황에 따라 지속적으로 업데이트됩니다.
 
-마지막 업데이트: 2023-04-29 
+마지막 업데이트: 2023-11-30 

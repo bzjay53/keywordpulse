@@ -34,7 +34,7 @@
     }
   ],
   "installCommand": "npm install typescript --no-save && npm install",
-  "buildCommand": "node build.js",
+  "buildCommand": "bash vercel-build.sh",
   "outputDirectory": "out",
   "override": {
     "framework": "nextjs",
@@ -45,7 +45,7 @@
     "enabled": true,
     "silent": true
   },
-  "framework": "nextjs",
+  "framework": false,
   "headers": [
     {
       "source": "/(.*)",

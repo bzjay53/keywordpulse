@@ -27,15 +27,13 @@
     }
   ],
   "installCommand": "npm install",
-  "buildCommand": "npm run build-static",
+  "buildCommand": "npm run build",
   "outputDirectory": "out",
   "github": {
     "enabled": true,
     "silent": true
   },
-  "framework": {
-    "preset": "next"
-  },
+  "framework": "nextjs",
   "headers": [
     {
       "source": "/(.*)",

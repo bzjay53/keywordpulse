@@ -29,8 +29,9 @@ const nextConfig = {
   },
   // 빌드에서 특정 페이지 제외
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
+  // 프로덕션 빌드에서 TypeScript 검사 비활성화
   typescript: {
-    // 타입 체크 오류가 있어도 빌드 진행
+    // 프로덕션 빌드에서 TypeScript 타입 체크 오류 무시
     ignoreBuildErrors: true,
   },
   eslint: {

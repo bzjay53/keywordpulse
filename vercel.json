@@ -13,20 +13,17 @@
     },
     {
       "src": "package.json",
-      "use": "@vercel/static-build"
+      "use": "@vercel/next",
+      "config": {
+        "installCommand": "npm install typescript && npm install --omit=dev",
+        "buildCommand": "npm run build"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/main.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/out/$1"
+      "dest": "/$1"
     }
   ],
   "installCommand": "npm install",
@@ -34,7 +31,7 @@
   "outputDirectory": "out",
   "github": {
     "enabled": true,
-    "silent": false
+    "silent": true
   },
   "framework": {
     "preset": "next"

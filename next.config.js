@@ -40,8 +40,15 @@ const nextConfig = {
     ignoreDuringBuilds: true
   },
   // 빌드 중에 상태 파일 생성을 제한하여 스택 오버플로우 방지
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.optimization.minimize = true;
+    
+    // 에일리어스 경로 추가
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@/lib': require('path').resolve(__dirname, './lib'),
+    };
+    
     return config;
   },
   // 모든 빌드 예외 무시

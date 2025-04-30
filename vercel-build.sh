@@ -17,6 +17,17 @@ if [ ! -d "node_modules/typescript" ]; then
   npm install --no-save typescript
 fi
 
+# lib 디렉토리 파일들을 app/lib 디렉토리로 복사하여 경로 해결
+echo "lib 파일들을 app/lib으로 복사 중..."
+mkdir -p app/lib
+cp -f lib/telegram.ts app/lib/
+cp -f lib/errors.ts app/lib/
+cp -f lib/exceptions.ts app/lib/
+cp -f lib/logger.ts app/lib/
+cp -f lib/trends_api.ts app/lib/
+cp -f lib/rag_engine.ts app/lib/
+echo "파일 복사 완료!"
+
 # Next.js 빌드 실행
 echo "Next.js 빌드 실행 중..."
 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS=--max_old_space_size=4096 npx next build

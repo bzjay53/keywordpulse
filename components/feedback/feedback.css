@@ -1,0 +1,418 @@
+/* 피드백 폼 스타일 */
+.feedback-form {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 24px;
+  width: 100%;
+  max-width: 500px;
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif);
+}
+
+.feedback-form.compact {
+  padding: 16px;
+  max-width: 400px;
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.feedback-header h3 {
+  font-size: 18px;
+  margin: 0;
+  color: #333;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background: #f5f5f5;
+}
+
+.rating-container {
+  margin-bottom: 20px;
+}
+
+.rating-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.feedback-input-container {
+  margin-bottom: 20px;
+}
+
+.feedback-input-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.feedback-input-container textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.feedback-input-container textarea:focus {
+  border-color: #4a90e2;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.error-message {
+  color: #e53e3e;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cancel-button {
+  background: white;
+  border: 1px solid #ddd;
+  color: #666;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-button:hover {
+  background: #f5f5f5;
+}
+
+.submit-button {
+  background: #4a90e2;
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submit-button:hover {
+  background: #3a7bc8;
+}
+
+.submit-button:disabled {
+  background: #a0c5f0;
+  cursor: not-allowed;
+}
+
+.feedback-privacy-notice {
+  font-size: 12px;
+  color: #888;
+  text-align: center;
+}
+
+.feedback-form-success {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 40px 24px;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.success-icon {
+  background: #4caf50;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+  margin: 0 auto 20px;
+}
+
+/* 별점 컴포넌트 스타일 */
+.star-rating-container {
+  margin-bottom: 8px;
+}
+
+.star-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.star {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.star-small {
+  font-size: 20px;
+}
+
+.star-medium {
+  font-size: 24px;
+}
+
+.star-large {
+  font-size: 32px;
+}
+
+.star-empty {
+  color: #ddd;
+}
+
+.star-filled {
+  color: #ffb400;
+}
+
+.star-hover {
+  color: #ffcc40;
+}
+
+.star-disabled {
+  cursor: default;
+}
+
+.star-rating-text {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #666;
+  height: 20px;
+}
+
+/* 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-container {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* 피드백 버튼 스타일 */
+.feedback-button {
+  font-family: var(--font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif);
+  cursor: pointer;
+  z-index: 900;
+}
+
+/* 버튼 위치 */
+.feedback-button-bottom-right {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
+
+.feedback-button-bottom-left {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+}
+
+.feedback-button-top-right {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+}
+
+.feedback-button-top-left {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+}
+
+/* 버튼 스타일 */
+.feedback-button-primary {
+  background: #4a90e2;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.feedback-button-primary:hover {
+  background: #3a7bc8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.feedback-button-secondary {
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 9px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s;
+}
+
+.feedback-button-secondary:hover {
+  background: #f9f9f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-button-text {
+  background: transparent;
+  color: #4a90e2;
+  border: none;
+  padding: 8px 12px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.feedback-button-text:hover {
+  color: #3a7bc8;
+  text-decoration: underline;
+}
+
+.feedback-button-icon {
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+}
+
+.feedback-button-icon:hover {
+  background: #f9f9f9;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* 다크 모드 지원 */
+@media (prefers-color-scheme: dark) {
+  .feedback-form,
+  .feedback-form-success,
+  .modal-content {
+    background: #2d2d2d;
+    color: #e1e1e1;
+  }
+  
+  .feedback-header h3 {
+    color: #e1e1e1;
+  }
+  
+  .close-button {
+    color: #aaa;
+  }
+  
+  .close-button:hover {
+    background: #3d3d3d;
+  }
+  
+  .rating-container label,
+  .feedback-input-container label {
+    color: #ccc;
+  }
+  
+  .feedback-input-container textarea {
+    background: #333;
+    border-color: #555;
+    color: #e1e1e1;
+  }
+  
+  .feedback-input-container textarea:focus {
+    border-color: #5a9fef;
+    box-shadow: 0 0 0 2px rgba(90, 159, 239, 0.25);
+  }
+  
+  .cancel-button {
+    background: #333;
+    border-color: #555;
+    color: #ccc;
+  }
+  
+  .cancel-button:hover {
+    background: #3d3d3d;
+  }
+  
+  .feedback-privacy-notice {
+    color: #aaa;
+  }
+  
+  .star-empty {
+    color: #666;
+  }
+  
+  .star-rating-text {
+    color: #bbb;
+  }
+  
+  .feedback-button-icon,
+  .feedback-button-secondary {
+    background: #333;
+    color: #e1e1e1;
+    border-color: #555;
+  }
+  
+  .feedback-button-icon:hover,
+  .feedback-button-secondary:hover {
+    background: #3d3d3d;
+  }
+  
+  .feedback-button-text {
+    color: #5a9fef;
+  }
+} 

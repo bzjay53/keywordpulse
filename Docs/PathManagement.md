@@ -63,4 +63,56 @@
 ## 5. 향후 개선 계획
 - 자동 경로 검증 CI/CD 워크플로우 통합
 - 경로 별칭 자동 완성 VSCode 확장 개발
-- 중복 import 자동 정리 도구 개발 
+- 중복 import 자동 정리 도구 개발
+
+## Vercel 배포 시 경로 관련 이슈 해결 방법
+
+### 문제 상황
+Vercel 배포 환경에서 `@/lib/telegram`, `@/lib/errors`, `@/lib/exceptions` 등 절대 경로 참조 모듈을 찾을 수 없는 오류가 발생하였습니다.
+
+### 해결책
+다음과 같은 방법으로 문제를 해결했습니다:
+
+1. **webpack alias 설정**:
+   ```javascript
+   // next.config.js
+   webpack: (config) => {
+     config.resolve.alias = {
+       ...config.resolve.alias,
+       '@/lib': require('path').resolve(__dirname, './lib'),
+     };
+     return config;
+   }
+   ```
+
+2. **모듈 복제**:
+   - lib/ 디렉토리의 주요 모듈들을 app/lib/ 디렉토리로 복사하여 중복 경로 문제 해결
+   - vercel-build.sh 스크립트에 파일 복사 로직 추가:
+   ```bash
+   # lib 디렉토리 파일들을 app/lib 디렉토리로 복사하여 경로 해결
+   mkdir -p app/lib
+   cp -f lib/telegram.ts app/lib/
+   cp -f lib/errors.ts app/lib/
+   cp -f lib/exceptions.ts app/lib/
+   cp -f lib/logger.ts app/lib/
+   cp -f lib/trends_api.ts app/lib/
+   cp -f lib/rag_engine.ts app/lib/
+   ```
+
+3. **통합 내보내기 파일 추가**:
+   - lib/index.js 및 app/lib/index.js 파일을 추가하여 모든 모듈을 한 곳에서 내보냄
+   ```javascript
+   // 모든 모듈 내보내기
+   export * from './telegram';
+   export * from './errors';
+   export * from './exceptions';
+   export * from './logger';
+   export * from './trends_api';
+   export * from './rag_engine';
+   
+   // 기본 내보내기가 있는 모듈들
+   export { default as telegram } from './telegram';
+   export { default as logger } from './logger';
+   ```
+
+이러한 접근 방식은 로컬 개발 환경과 Vercel 배포 환경 모두에서 일관된 모듈 경로를 보장합니다. 

@@ -99,4 +99,71 @@ GitHub 저장소에 대한 Vercel 통합이 설정되면 주 브랜치에 대한
 
 ## 📈 모니터링
 
-배포 후 Sentry 대시보드를 통해 애플리케이션 성능과 오류를 모니터링할 수 있습니다. 
+배포 후 Sentry 대시보드를 통해 애플리케이션 성능과 오류를 모니터링할 수 있습니다.
+
+## Vercel 배포 관련 문제 해결
+
+### 경로 별칭(@/) 문제 해결
+
+Vercel 환경에서 `@/lib` 같은 경로 별칭을 사용할 때 발생하는 문제와 해결 방법:
+
+1. **문제 상황**: 
+   - 로컬에서는 정상 작동하는 `@/lib/telegram`, `@/lib/errors` 등의 모듈이 Vercel 배포 시 찾을 수 없는 오류 발생
+   - Next.js에서 설정한 경로 별칭이 Vercel 환경에서 올바르게 인식되지 않음
+
+2. **해결책**:
+
+   a. **webpack alias 설정 추가**:
+   ```javascript
+   // next.config.js
+   webpack: (config) => {
+     config.resolve.alias = {
+       ...config.resolve.alias,
+       '@/lib': require('path').resolve(__dirname, './lib'),
+     };
+     return config;
+   }
+   ```
+
+   b. **중복 경로 유지**:
+   - 주요 모듈들을 루트 `lib/` 디렉토리와 `app/lib/` 디렉토리 양쪽에 모두 유지
+   - 배포 스크립트에 파일 동기화 로직 추가:
+   ```bash
+   # 빌드 전 lib 파일들을 app/lib으로 복사
+   mkdir -p app/lib
+   cp -f lib/telegram.ts app/lib/
+   cp -f lib/errors.ts app/lib/
+   cp -f lib/exceptions.ts app/lib/
+   ...
+   ```
+
+   c. **통합 내보내기 파일 사용**:
+   - `lib/index.js` 및 `app/lib/index.js` 추가하여 모든 모듈을 한 곳에서 내보냄
+   - 필요한 경우 import를 `@/lib/module` 대신 `@/lib` 통합 모듈에서 가져오도록 수정
+
+3. **주의사항**:
+   - 파일 경로가 변경될 경우 양쪽 디렉토리를 모두 업데이트해야 함
+   - 가능하면 상대 경로보다 항상 경로 별칭 사용 권장
+   - 배포 전 반드시 경로 검증 스크립트 실행 필요
+
+### Vercel 환경 변수 설정
+
+환경 변수를 올바르게 설정하는 것도 중요합니다:
+
+1. Vercel 대시보드 > 프로젝트 > Settings > Environment Variables에서 다음 설정:
+   - `NODE_PATH=.` (모듈 경로 해석 향상)
+   - `NEXT_TELEMETRY_DISABLED=1` (텔레메트리 비활성화)
+   - 기타 필요한 API 키와 환경 변수들
+
+2. 환경 변수 파일 관리:
+   - `.env.local`: 로컬 개발용 환경 변수 (git에 추가하지 않음)
+   - `.env.production`: 프로덕션 환경 변수 템플릿 (민감한 정보 제외)
+
+### 배포 후 검증
+
+배포 후에는 다음 항목을 확인해야 합니다:
+
+1. **모듈 로드 오류**: 개발자 도구 콘솔에서 모듈 관련 오류 확인
+2. **API 엔드포인트**: 모든 API 엔드포인트 작동 여부 테스트
+3. **환경 변수**: 환경 변수가 올바르게 로드되었는지 확인
+4. **정적 자산**: 정적 파일(이미지, 스타일 등)이 올바르게 제공되는지 확인 

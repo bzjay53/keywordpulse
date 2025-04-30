@@ -6,7 +6,7 @@
 import {
   generateKeywordAnalysis,
   categorizeKeyword
-} from '../../app/lib/rag_engine';
+} from '../lib/rag_engine';
 
 // logger 모듈 모킹
 jest.mock('../../app/lib/logger', () => ({

@@ -105,12 +105,12 @@ function moveApiFiles(stats) {
   }
   
   // app/app/api 디렉토리 내 파일 및 폴더 이동
-  function copyRecursive(src, dest) {
+  function copyRecursive(src, dest, globalStats) {
     const exists = fs.existsSync(src);
     if (!exists) return;
     
-    const stats = fs.statSync(src);
-    if (stats.isDirectory()) {
+    const fileStats = fs.statSync(src);
+    if (fileStats.isDirectory()) {
       if (!fs.existsSync(dest)) {
         if (!config.dryRun) {
           fs.mkdirSync(dest, { recursive: true });
@@ -124,9 +124,10 @@ function moveApiFiles(stats) {
       for (const file of files) {
         const srcFile = path.join(src, file);
         const destFile = path.join(dest, file);
-        copyRecursive(srcFile, destFile);
+        copyRecursive(srcFile, destFile, globalStats);
       }
     } else {
+      const destFile = dest;  // 파일인 경우 dest가 이미 대상 파일 경로임
       if (!config.dryRun) {
         const content = fs.readFileSync(src, 'utf8');
         // app/app/... -> app/... 경로 수정
@@ -139,11 +140,11 @@ function moveApiFiles(stats) {
       }
       
       console.log(`${config.dryRun ? '[테스트] ' : ''}파일 이동: ${src} -> ${destFile}`);
-      stats.filesMoved++;
+      globalStats.filesMoved++;
     }
   }
   
-  copyRecursive(appAppApiDir, appApiDir);
+  copyRecursive(appAppApiDir, appApiDir, stats);
   
   // app/app/api 디렉토리 제거 (테스트 모드에서는 수행하지 않음)
   if (!config.dryRun) {
@@ -159,23 +160,46 @@ function moveApiFiles(stats) {
   }
 }
 
+// 재귀적으로 파일 찾기 (Windows 호환)
+function findFiles(dir, extensions, ignoreDirs) {
+  let results = [];
+  
+  if (!fs.existsSync(dir)) return results;
+  
+  const list = fs.readdirSync(dir);
+  
+  for (const file of list) {
+    const fullPath = path.join(dir, file);
+    const relativePath = path.relative(config.rootDir, fullPath);
+    
+    // 무시할 디렉토리 체크
+    if (ignoreDirs.some(ignoreDir => relativePath.includes(ignoreDir))) {
+      continue;
+    }
+    
+    const stat = fs.statSync(fullPath);
+    
+    if (stat.isDirectory()) {
+      // 디렉토리인 경우 재귀 호출
+      results = results.concat(findFiles(fullPath, extensions, ignoreDirs));
+    } else {
+      // 파일 확장자 체크
+      const ext = path.extname(file).toLowerCase();
+      if (extensions.includes(ext)) {
+        results.push(fullPath);
+      }
+    }
+  }
+  
+  return results;
+}
+
 // 파일 내 경로 참조 수정
 function fixFileImports(stats) {
   console.log(`\n${colors.blue}파일 내 경로 참조 수정 중...${colors.reset}`);
   
-  // 모든 대상 파일 찾기
-  let command = `find ${config.rootDir} -type f `;
-  
-  // 확장자 필터
-  const extPattern = config.fileExtensions.join('\\|');
-  command += `-name "*\\(${extPattern}\\)" `;
-  
-  // 무시할 디렉토리 제외
-  config.ignoreDirs.forEach(dir => {
-    command += `-not -path "*/${dir}/*" `;
-  });
-  
-  const files = execSync(command).toString().trim().split('\n').filter(Boolean);
+  // 모든 대상 파일 찾기 (Windows 호환 방식)
+  const files = findFiles(config.rootDir, config.fileExtensions, config.ignoreDirs);
   console.log(`검사할 파일 수: ${files.length}`);
   
   // 각 파일 검사 및 수정
@@ -191,7 +215,18 @@ function fixFileImports(stats) {
         { pattern: /from ['"]\.\.\/app\//g, replacement: 'from \'./' },
         { pattern: /from ['"]app\/app\//g, replacement: 'from \'app/' },
         { pattern: /from ['"]@\/app\/app\//g, replacement: 'from \'@/app/' },
-        // 더 많은 패턴 추가 가능
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'from \'@/lib/telegram' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'from \'@/lib/telegram' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'from \'@/lib/telegram' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/lib\/errors/g, replacement: 'from \'@/lib/errors' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/lib\/errors/g, replacement: 'from \'@/lib/errors' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/lib\/errors/g, replacement: 'from \'@/lib/errors' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/lib\/exceptions/g, replacement: 'from \'@/lib/exceptions' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/lib\/exceptions/g, replacement: 'from \'@/lib/exceptions' },
+        { pattern: /from ['"]\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/lib\/exceptions/g, replacement: 'from \'@/lib/exceptions' },
+        { pattern: /import ['"]\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'import \'@/lib/telegram' },
+        { pattern: /import ['"]\.\.\/\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'import \'@/lib/telegram' },
+        { pattern: /import ['"]\.\.\/\.\.\/\.\.\/\.\.\/\.\.\/lib\/telegram/g, replacement: 'import \'@/lib/telegram' }
       ];
       
       // 각 패턴으로 수정 시도

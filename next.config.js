@@ -37,9 +37,7 @@ const nextConfig = {
   },
   eslint: {
     // ESLint 오류가 있어도 빌드 진행
-    ignoreDuringBuilds: true,
-    ignoreDevelopmentErrors: true,
-    ignorePatterns: ['**/*'],
+    ignoreDuringBuilds: true
   },
   // 빌드 중에 상태 파일 생성을 제한하여 스택 오버플로우 방지
   webpack: (config) => {

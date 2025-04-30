@@ -9,10 +9,10 @@ import {
   type KeywordCategory,
   type SupportedLanguage,
   type UserPreferences
-} from '../../app/lib/rag_engine';
+} from '@/lib/rag_engine';
 
 // logger 모듈 모킹
-jest.mock('../../app/lib/logger', () => ({
+jest.mock('@/app/lib/logger', () => ({
   log: jest.fn(),
   error: jest.fn(),
 }));

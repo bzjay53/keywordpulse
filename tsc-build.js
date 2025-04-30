@@ -6,6 +6,7 @@
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 // TypeScript 설치
 console.log('TypeScript 패키지 설치 중...');
@@ -37,7 +38,11 @@ exec('npm install typescript --no-save', (error, stdout, stderr) => {
       resolveJsonModule: true,
       isolatedModules: true,
       jsx: "preserve",
-      outDir: "out-js"
+      outDir: "out-js",
+      baseUrl: ".",
+      paths: {
+        "@/*": ["./*"]
+      }
     },
     include: ["**/*.ts", "**/*.tsx"],
     exclude: ["node_modules"]
@@ -58,9 +63,16 @@ exec('npm install typescript --no-save', (error, stdout, stderr) => {
     
     console.log(`컴파일 출력: ${stdout || "출력 없음 (성공)"}`);
     
-    // Next.js 빌드 실행
+    // Next.js 빌드 실행 - 크로스 플랫폼 환경 변수 설정
     console.log('Next.js 빌드 실행 중...');
-    exec('NODE_OPTIONS=--max_old_space_size=4096 NEXT_TELEMETRY_DISABLED=1 next build', (error, stdout, stderr) => {
+    
+    // 환경변수 설정을 플랫폼에 맞게 처리
+    const isWindows = os.platform() === 'win32';
+    const buildCommand = isWindows 
+      ? 'set "NODE_OPTIONS=--max_old_space_size=4096" && set "NEXT_TELEMETRY_DISABLED=1" && next build'
+      : 'NODE_OPTIONS=--max_old_space_size=4096 NEXT_TELEMETRY_DISABLED=1 next build';
+    
+    exec(buildCommand, (error, stdout, stderr) => {
       if (error) {
         console.error(`Next.js 빌드 오류: ${error.message}`);
         process.exit(1);

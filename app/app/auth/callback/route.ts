@@ -15,47 +15,40 @@ export async function GET(request: NextRequest) {
   try {
     const requestUrl = new URL(request.url);
     
-    // 개발 모드인 경우 인증 우회
+    // 개발 모드에서는 코드 확인 생략 (선택 사항)
     if (requestUrl.searchParams.get("dev") === "true") {
-      console.log("개발 모드로 인증을 우회합니다.");
-      return NextResponse.redirect(new URL("/dashboard", requestUrl.origin));
+      console.log("개발 모드로 인증 건너뛰기");
+      return NextResponse.redirect(new URL('/dev-login', requestUrl.origin));
     }
     
-    // 인증 코드 확인
+    // 코드가 없으면 로그인 페이지로 리다이렉트
     const code = requestUrl.searchParams.get("code");
     if (!code) {
       console.error("인증 코드가 없습니다.");
-      return NextResponse.redirect(new URL("/login?error=no_code", requestUrl.origin));
+      return NextResponse.redirect(new URL('/login?error=no_code', requestUrl.origin));
     }
     
-    // Supabase 환경 변수 확인
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Supabase 환경 변수 확인 - 정적 빌드에서도 오류 없도록 처리
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co';
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'example-anon-key';
     
-    if (!supabaseUrl || !supabaseAnonKey || 
-        supabaseUrl === "https://example.supabase.co" || 
-        supabaseAnonKey === "example-anon-key") {
-      console.error("Supabase 환경 변수가 올바르게 설정되지 않았습니다.");
-      return NextResponse.redirect(new URL("/login?error=invalid_supabase_config", requestUrl.origin));
-    }
+    // 클라이언트 생성
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Supabase 클라이언트 생성
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    // 인증 코드로 세션 교환
+    // 인증 코드 교환
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (error) {
-      console.error("인증 코드 교환 중 오류 발생:", error.message);
+      console.error("인증 코드 교환 중 오류:", error.message);
       return NextResponse.redirect(
         new URL(`/login?error=${encodeURIComponent(error.message)}`, requestUrl.origin)
       );
     }
     
-    // 인증 성공 시 대시보드로 리다이렉트
-    return NextResponse.redirect(new URL("/dashboard", requestUrl.origin));
+    // 성공 시 홈페이지로 리다이렉트
+    return NextResponse.redirect(new URL('/', requestUrl.origin));
   } catch (error) {
-    console.error("인증 처리 중 예상치 못한 오류 발생:", error);
-    return NextResponse.redirect(new URL("/login?error=unexpected_error", request.url));
+    console.error("인증 콜백 처리 중 오류 발생:", error);
+    return NextResponse.redirect(new URL('/login?error=callback_error', request.url));
   }
 } 

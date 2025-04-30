@@ -92,23 +92,46 @@ function checkDirectoryStructure() {
   }
 }
 
+// 재귀적으로 파일 찾기 (Windows 호환)
+function findFiles(dir, extensions, ignoreDirs) {
+  let results = [];
+  
+  if (!fs.existsSync(dir)) return results;
+  
+  const list = fs.readdirSync(dir);
+  
+  for (const file of list) {
+    const fullPath = path.join(dir, file);
+    const relativePath = path.relative(config.rootDir, fullPath);
+    
+    // 무시할 디렉토리 체크
+    if (ignoreDirs.some(ignoreDir => relativePath.includes(ignoreDir))) {
+      continue;
+    }
+    
+    const stat = fs.statSync(fullPath);
+    
+    if (stat.isDirectory()) {
+      // 디렉토리인 경우 재귀 호출
+      results = results.concat(findFiles(fullPath, extensions, ignoreDirs));
+    } else {
+      // 파일 확장자 체크
+      const ext = path.extname(file).toLowerCase();
+      if (extensions.includes(ext)) {
+        results.push(fullPath);
+      }
+    }
+  }
+  
+  return results;
+}
+
 // 파일 내용 검사
 function scanFiles() {
   console.log(`\n${colors.blue}파일 내용 검사 중...${colors.reset}`);
   
-  // 모든 대상 파일 찾기
-  let command = `find ${config.rootDir} -type f `;
-  
-  // 확장자 필터
-  const extPattern = config.fileExtensions.join('\\|');
-  command += `-name "*\\(${extPattern}\\)" `;
-  
-  // 무시할 디렉토리 제외
-  config.ignoreDirs.forEach(dir => {
-    command += `-not -path "*/${dir}/*" `;
-  });
-  
-  const files = execSync(command).toString().trim().split('\n');
+  // 모든 대상 파일 찾기 (Windows 호환 방식)
+  const files = findFiles(config.rootDir, config.fileExtensions, config.ignoreDirs);
   console.log(`검사할 파일 수: ${files.length}`);
   
   // 각 파일 검사
@@ -250,39 +273,39 @@ function reportResults() {
   
   // VSCode 확장 문제
   if (issues.vscodeExtension.missing) {
-    console.log(`\n${colors.yellow}VSCode 확장 구성 파일이 없습니다.${colors.reset}`);
+    console.log(`\n${colors.yellow}VSCode 확장 구성 파일이 존재하지 않습니다.${colors.reset}`);
     totalIssues++;
   }
   
   // 종합 결과
+  console.log(`\n${colors.blue}종합 결과:${colors.reset}`);
   if (totalIssues === 0) {
-    console.log(`\n${colors.green}✓ 모든 검사 통과!${colors.reset}`);
+    console.log(`${colors.green}문제가 발견되지 않았습니다.${colors.reset}`);
   } else {
-    console.log(`\n${colors.red}✗ ${totalIssues}개의 문제 발견${colors.reset}`);
+    console.log(`${colors.yellow}총 ${totalIssues}개의 문제가 발견되었습니다.${colors.reset}`);
     
-    console.log(`\n${colors.magenta}수정 제안:${colors.reset}`);
-    console.log(`1. tsconfig.json의 경로 별칭 확인 및 수정`);
-    console.log(`2. 상대 경로 대신 경로 별칭(@/) 사용`);
-    console.log(`3. app/app 디렉토리 구조 정리 (app/api로 통합)`);
+    // 수정 방법 제안
+    console.log(`\n${colors.blue}수정 방법:${colors.reset}`);
+    
+    if (issues.duplicateAppDir.length > 0 || issues.appAppImports.length > 0) {
+      console.log(`1. 'node scripts/path-fix.js --dry-run'을 실행하여 수정 사항 미리보기`);
+      console.log(`2. 'node scripts/path-fix.js'를 실행하여 자동 수정 적용`);
+    }
+    
+    if (issues.inconsistentImports.length > 0) {
+      console.log(`3. import 경로를 일관되게 @/ 접두사를 사용하도록 수정`);
+    }
     
     if (issues.documentation.missing || issues.documentation.outdated) {
-      console.log(`4. 경로 관리 문서 업데이트 또는 생성 (${config.documentationFiles.pathManagement})`);
+      console.log(`4. 경로 관리 문서 업데이트 또는 작성`);
     }
     
     if (issues.vscodeExtension.missing) {
-      console.log(`5. VSCode 확장 구성 파일 추가 (.vscode/extensions.json)`);
-    }
-    
-    if (config.fixMode) {
-      console.log(`\n${colors.green}자동 수정 시도...${colors.reset}`);
-      // 여기에 자동 수정 로직 추가
-    } else {
-      console.log(`\n수정 모드로 실행하려면: node scripts/path-check.js --fix`);
+      console.log(`5. VSCode 확장 구성 파일 추가`);
     }
   }
 }
 
-// 메인 실행
 function main() {
   checkDirectoryStructure();
   scanFiles();

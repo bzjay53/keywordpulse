@@ -3,7 +3,7 @@
  * @jest-environment node
  */
 
-import { generateKeywordAnalysis } from '../../app/lib/rag_engine';
+import { generateKeywordAnalysis } from '@/lib/rag_engine';
 import { NextResponse } from 'next/server';
 
 // POST 함수를 직접 모킹

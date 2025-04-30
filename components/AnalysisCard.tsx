@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useClipboard from '../app/hooks/useClipboard';
+import useClipboard from './hooks/useClipboard';
 import AnalysisRenderer from './AnalysisRenderer';
 
 interface AnalysisCardProps {

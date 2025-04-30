@@ -2,6 +2,7 @@ import React from 'react';
 import Head from 'next/head';
 import { FeedbackButton } from '@/components/feedback';
 import { useFeedback } from '@/hooks/useFeedback';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import '@/components/feedback/feedback.css';
 
 interface MainLayoutProps {
@@ -23,6 +24,16 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       console.error('피드백 제출 중 오류 발생:', error.message);
     }
   });
+  
+  const analytics = useAnalytics();
+  
+  React.useEffect(() => {
+    analytics.trackEvent('page_metadata', {
+      title,
+      description,
+      canonical: window.location.href
+    });
+  }, [analytics, title, description]);
 
   return (
     <>
@@ -43,6 +54,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onSubmit={submitFeedback}
           position="bottom-right"
           variant="icon"
+          contextData={{
+            pageTitle: title,
+            pageUrl: typeof window !== 'undefined' ? window.location.href : ''
+          }}
         />
       </div>
     </>

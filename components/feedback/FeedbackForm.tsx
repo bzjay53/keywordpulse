@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StarRating } from './StarRating';
+import analytics from '@/lib/analytics';
 
 interface FeedbackFormProps {
   onSubmit?: (data: FeedbackData) => Promise<void>;
@@ -31,6 +32,17 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 분석 이벤트: 별점 변경
+  const handleRatingChange = (newRating: number) => {
+    setRating(newRating);
+    analytics.logEvent({
+      eventType: analytics.EventType.FEATURE_USAGE,
+      category: 'feedback',
+      action: 'rating_changed',
+      value: newRating
+    });
+  };
 
   const getCurrentContext = () => {
     return {
@@ -76,6 +88,17 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
         platform: navigator.platform
       };
       
+      // 분석 이벤트: 피드백 제출
+      analytics.logEvent({
+        eventType: analytics.EventType.FEEDBACK,
+        value: rating,
+        label: feedback,
+        metadata: {
+          context: getCurrentContext(),
+          formType: compact ? 'compact' : 'full'
+        }
+      });
+      
       if (onSubmit) {
         await onSubmit(feedbackData);
       } else {
@@ -93,6 +116,11 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
     } catch (err) {
       setError('피드백 제출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       console.error('피드백 제출 오류:', err);
+      
+      // 분석 이벤트: 피드백 제출 실패
+      analytics.logError('피드백 제출 실패', 'FEEDBACK_SUBMIT_ERROR', {
+        errorDetails: err instanceof Error ? err.message : '알 수 없는 오류'
+      });
     } finally {
       setSubmitting(false);
     }
@@ -113,7 +141,18 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
       <div className="feedback-header">
         <h3>{compact ? '간편 피드백' : '서비스 개선을 위한 피드백'}</h3>
         {onClose && (
-          <button type="button" className="close-button" onClick={onClose}>
+          <button 
+            type="button" 
+            className="close-button" 
+            onClick={() => {
+              onClose();
+              // 분석 이벤트: 피드백 폼 닫기
+              analytics.logButtonClick('feedback_form_close', 'feedback', {
+                feedbackEntered: !!feedback.trim(),
+                ratingSelected: rating > 0
+              });
+            }}
+          >
             ✕
           </button>
         )}
@@ -121,7 +160,7 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
       
       <div className="rating-container">
         <label>이 페이지가 얼마나 유용했나요?</label>
-        <StarRating value={rating} onChange={setRating} size={compact ? 'small' : 'medium'} />
+        <StarRating value={rating} onChange={handleRatingChange} size={compact ? 'small' : 'medium'} />
       </div>
       
       <div className="feedback-input-container">
@@ -132,6 +171,10 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
           onChange={(e) => setFeedback(e.target.value)}
           placeholder="서비스를 개선하는데 도움이 될 의견을 알려주세요"
           rows={compact ? 3 : 5}
+          onFocus={() => {
+            // 분석 이벤트: 피드백 입력 시작
+            analytics.logFeatureUsage('feedback', 'text_focus');
+          }}
         />
       </div>
       
@@ -139,7 +182,19 @@ export const FeedbackForm: React.FC<FeedbackFormProps> = ({
       
       <div className="feedback-actions">
         {onClose && !compact && (
-          <button type="button" className="cancel-button" onClick={onClose} disabled={submitting}>
+          <button 
+            type="button" 
+            className="cancel-button" 
+            onClick={() => {
+              onClose();
+              // 분석 이벤트: 피드백 취소
+              analytics.logButtonClick('feedback_form_cancel', 'feedback', {
+                feedbackEntered: !!feedback.trim(),
+                ratingSelected: rating > 0
+              });
+            }} 
+            disabled={submitting}
+          >
             취소
           </button>
         )}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FeedbackModal } from './FeedbackModal';
 import { FeedbackData } from './FeedbackForm';
+import analytics from '@/lib/analytics';
 
 interface FeedbackButtonProps {
   onSubmit: (data: FeedbackData) => Promise<void>;
@@ -21,8 +22,49 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const openModal = () => {
+    setIsModalOpen(true);
+    
+    // 분석 이벤트: 피드백 버튼 클릭
+    analytics.logButtonClick('feedback_button', 'feedback', {
+      position,
+      variant,
+      label
+    });
+  };
+  
+  const closeModal = () => {
+    setIsModalOpen(false);
+    
+    // 분석 이벤트: 피드백 모달 닫기
+    analytics.logFeatureUsage('feedback', 'modal_close');
+  };
+  
+  // 피드백 제출 시 분석 이벤트 추가
+  const handleSubmit = async (data: FeedbackData) => {
+    try {
+      // 원래 제출 함수 호출
+      await onSubmit(data);
+      
+      // 분석 이벤트: 피드백 제출 성공
+      analytics.logFeatureUsage('feedback', 'submit_success', {
+        rating: data.rating,
+        hasContent: !!data.feedback.trim(),
+        position,
+        variant
+      });
+    } catch (error) {
+      // 분석 이벤트: 피드백 제출 실패
+      analytics.logError('피드백 제출 실패', 'FEEDBACK_SUBMIT_ERROR', {
+        errorDetails: error instanceof Error ? error.message : '알 수 없는 오류',
+        position,
+        variant
+      });
+      
+      // 오류를 상위로 다시 던짐
+      throw error;
+    }
+  };
 
   // 버튼 아이콘 (variant가 icon일 때 사용)
   const renderIcon = () => (
@@ -63,6 +105,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
         className={`feedback-button ${getPositionClass()} ${getVariantClass()} ${className}`}
         onClick={openModal}
         aria-label={label}
+        data-testid="feedback-button"
       >
         {variant === 'icon' ? renderIcon() : label}
       </button>
@@ -70,7 +113,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
       <FeedbackModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSubmit={onSubmit}
+        onSubmit={handleSubmit}
         contextData={{
           source: 'FeedbackButton',
           position,

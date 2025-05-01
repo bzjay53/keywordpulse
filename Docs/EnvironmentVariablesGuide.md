@@ -47,6 +47,9 @@ GOOGLE_SHEETS_ID=<Google Sheets 문서 ID>
 TELEGRAM_BOT_TOKEN=<Telegram 봇 토큰>
 TELEGRAM_CHAT_ID=<Telegram 채팅 ID>
 
+# OpenAI API 설정
+OPENAI_API_KEY=<OpenAI API 키>
+
 # 애플리케이션 설정
 NEXT_PUBLIC_BASE_URL=<애플리케이션 기본 URL>
 ```

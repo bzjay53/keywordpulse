@@ -67,10 +67,22 @@ fi
 
 # 필요한 경우: 모든 API 경로의 @/lib 참조를 상대 경로로 자동 변환
 echo "=== @/lib 참조를 상대 경로로 자동 변환 ==="
-find app/api -name "*.ts" -type f -exec sed -i 's|@/lib/telegram|../../../lib/telegram|g' {} \;
-find app/api -name "*.ts" -type f -exec sed -i 's|@/lib/errors|../../../lib/errors|g' {} \;
-find app/api -name "*.ts" -type f -exec sed -i 's|@/lib/exceptions|../../../lib/exceptions|g' {} \;
-find app/api -name "*.ts" -type f -exec sed -i 's|@/lib/|../../../lib/|g' {} \;
+
+# 1. app/api/notify/route.ts (2단계 중첩)
+find app/api/notify -maxdepth 1 -name "*.ts" -type f -exec sed -i 's|@/lib/|../lib/|g' {} \;
+
+# 2. app/api/notify/telegram/route.ts (3단계 중첩)
+find app/api/notify/telegram -maxdepth 1 -name "*.ts" -type f -exec sed -i 's|@/lib/|../../lib/|g' {} \;
+
+# 3. app/api/notify/telegram/*/route.ts (4단계 중첩)
+find app/api/notify/telegram/* -maxdepth 1 -name "*.ts" -type f -exec sed -i 's|@/lib/|../../../lib/|g' {} \;
+
+# 4. app/api/feedback, app/api/keywords 등 다른 2단계 경로
+find app/api/* -maxdepth 1 -name "*.ts" -type f -not -path "app/api/notify*" -exec sed -i 's|@/lib/|../lib/|g' {} \;
+
+# 모든 변경사항 확인 (디버깅용)
+echo "=== 변경된 파일 내용 확인 ==="
+find app/api -name "*.ts" -type f -exec grep -A 3 "import.*lib/" {} \; || echo "import 문이 발견되지 않았습니다."
 
 # tsconfig.json paths 확인 로그
 echo "=== tsconfig.json paths 확인 ==="

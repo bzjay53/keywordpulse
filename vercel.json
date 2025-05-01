@@ -15,15 +15,8 @@
       "src": "package.json",
       "use": "@vercel/next",
       "config": {
-        "installCommand": "npm install typescript @types/node @types/react @types/react-dom --save && npm install",
-        "buildCommand": "NODE_OPTIONS=--max_old_space_size=4096 SKIP_TYPESCRIPT_CHECK=true NEXT_TELEMETRY_DISABLED=1 next build"
-      }
-    },
-    {
-      "src": "build.js",
-      "use": "@vercel/node",
-      "config": {
-        "distDir": "out"
+        "installCommand": "npm install typescript && npm install --omit=dev",
+        "buildCommand": "bash scripts/vercel-build.sh"
       }
     }
   ],

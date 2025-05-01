@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode, validateTelegramConfig } from '../../../lib/telegram';
-import { ApiError } from '../../../lib/exceptions';
+import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode, validateTelegramConfig } from '../../../../lib/telegram';
+import { ApiError } from '../../../../lib/exceptions';
 
 // 정적 내보내기와 호환되도록 force-dynamic 설정 제거
 // export const dynamic = 'force-dynamic';

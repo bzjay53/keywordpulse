@@ -1,5 +1,20 @@
-# TypeScript 설정 파일 무시
-tsconfig.json
-tsconfig.*.json
+# Node 모듈 및 빌드 디렉토리 무시
 **/node_modules
-.next 
+.next
+
+# 불필요한 파일 무시
+README.md
+SETUP.md
+Docs
+__tests__
+tests
+coverage
+.github
+.vscode
+
+# 중요: tsconfig.json은 무시하지 말 것
+# tsconfig.json
+
+# 필요한 구성 파일이 포함되도록 함
+# vercel.json
+# next.config.js 

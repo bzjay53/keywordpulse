@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "bash vercel-build.sh",
   "functions": {
     "api/*.py": {
       "runtime": "python3.10",
@@ -13,11 +14,7 @@
     },
     {
       "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "installCommand": "npm install typescript && npm install --omit=dev",
-        "buildCommand": "bash scripts/vercel-build.sh"
-      }
+      "use": "@vercel/next"
     }
   ],
   "routes": [

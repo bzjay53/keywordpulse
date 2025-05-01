@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // 정적 페이지로 내보내기 설정 
-  output: 'export',
+  // 정적 페이지 내보내기 설정은 Vercel 배포에서는 필요하지 않음 (주석 처리)
+  // output: 'export',
   // 외부 종속성 설정
   transpilePackages: ['next-auth'],
   // 실험적 기능 설정
@@ -11,8 +13,8 @@ const nextConfig = {
     serverComponentsExternalPackages: ['sharp'],
     optimizeCss: true,
   },
-  // Vercel 배포를 위한 설정
-  distDir: 'out',
+  // Vercel 빌드 디렉토리 설정
+  distDir: '.next',
   trailingSlash: true,
   // 환경변수 설정
   env: {
@@ -25,7 +27,7 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     domains: ['images.unsplash.com'],
-    unoptimized: true, // 정적 내보내기용 설정
+    unoptimized: true,
   },
   // 빌드에서 특정 페이지 제외
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
@@ -43,10 +45,17 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     config.optimization.minimize = true;
     
-    // 에일리어스 경로 추가
+    // 경로 별칭 설정 확장
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@/lib': require('path').resolve(__dirname, './lib'),
+      '@': path.resolve(__dirname),
+      '@/lib': path.resolve(__dirname, './lib'),
+      '@/app/lib': path.resolve(__dirname, './app/lib'),
+      '@/components': path.resolve(__dirname, './components'),
+      '@/hooks': path.resolve(__dirname, './hooks'),
+      '@/app': path.resolve(__dirname, './app'),
+      '@/styles': path.resolve(__dirname, './styles'),
+      '@/utils': path.resolve(__dirname, './utils'),
     };
     
     return config;

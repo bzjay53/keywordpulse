@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseClient';
-import logger from '@/lib/logger';
-import { sendTelegramMessage } from '@/lib/telegram';
+import { createClient } from '../../lib/supabaseClient';
+import logger from '../../lib/logger';
+import { sendTelegramMessage } from '../../lib/telegram';
 
 interface FeedbackData {
   rating: number;
@@ -19,90 +19,87 @@ interface FeedbackData {
  */
 export async function POST(request: NextRequest) {
   try {
-    // 요청 데이터 파싱
-    const data: FeedbackData = await request.json();
+    // 요청 본문 파싱
+    const body = await request.json();
     
-    // 데이터 유효성 검증
-    if (!data.rating || !data.feedback) {
-      return NextResponse.json({ 
-        success: false, 
-        message: '평점과 피드백 내용은 필수입니다.' 
-      }, { status: 400 });
+    // 필수 필드 검증
+    if (!body.text) {
+      return NextResponse.json(
+        { error: '피드백 내용을 입력해주세요.' },
+        { status: 400 }
+      );
     }
     
-    // Supabase 클라이언트 생성
+    // 피드백 데이터 구성
+    const feedbackData = {
+      text: body.text,
+      email: body.email || null,
+      name: body.name || null,
+      rating: body.rating || null,
+      category: body.category || '일반',
+      page: body.page || null,
+      ip: request.headers.get('x-forwarded-for') || request.ip || null,
+      user_agent: request.headers.get('user-agent') || null,
+      created_at: new Date().toISOString()
+    };
+    
+    // Supabase에 피드백 저장
     const supabase = createClient();
-    
-    // 피드백 저장
-    const { data: savedFeedback, error } = await supabase
+    const { data, error } = await supabase
       .from('feedback')
-      .insert([
-        {
-          rating: data.rating,
-          feedback: data.feedback,
-          context: data.context ?? {},
-          timestamp: data.timestamp ?? new Date().toISOString(),
-          user_id: data.userId || null,
-          browser_info: data.browser || null,
-          platform: data.platform || null,
-          status: 'new'
-        }
-      ])
-      .select()
-      .single();
+      .insert([feedbackData])
+      .select();
     
-    // 저장 오류 처리
     if (error) {
-      logger.error('피드백 저장 중 오류 발생', { error, data });
-      return NextResponse.json({ 
-        success: false, 
-        message: '피드백을 저장하는 중 오류가 발생했습니다.' 
-      }, { status: 500 });
+      logger.error('피드백 저장 중 오류 발생:', error);
+      throw error;
     }
     
-    // 중요 피드백(1-2점)은 텔레그램으로 알림 전송
-    if (data.rating <= 2) {
-      try {
-        const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-        const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+    // 텔레그램으로 알림 전송 (선택 사항)
+    try {
+      const botToken = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
+      
+      if (botToken && chatId) {
+        const telegramMessage = `
+📝 <b>새 피드백 접수</b>
+
+<b>내용:</b> ${feedbackData.text}
+${feedbackData.name ? `<b>이름:</b> ${feedbackData.name}` : ''}
+${feedbackData.email ? `<b>이메일:</b> ${feedbackData.email}` : ''}
+${feedbackData.rating ? `<b>평점:</b> ${feedbackData.rating}/5` : ''}
+<b>카테고리:</b> ${feedbackData.category}
+${feedbackData.page ? `<b>페이지:</b> ${feedbackData.page}` : ''}
+<b>시간:</b> ${new Date().toLocaleString('ko-KR')}
+        `;
         
-        if (telegramToken && telegramChatId) {
-          const message = formatFeedbackMessage(data);
-          
-          await sendTelegramMessage(telegramToken, {
-            chat_id: telegramChatId,
-            text: message,
-            parse_mode: 'HTML'
-          });
-          
-          logger.info('중요 피드백 알림 전송 완료', { 
-            feedbackId: savedFeedback.id,
-            rating: data.rating 
-          });
-        }
-      } catch (notifyError) {
-        // 알림 전송 실패는 API 응답에 영향을 주지 않음
-        logger.warn('피드백 알림 전송 중 오류 발생', { notifyError });
+        await sendTelegramMessage(botToken, {
+          chat_id: chatId,
+          text: telegramMessage,
+          parse_mode: 'HTML'
+        });
       }
+    } catch (telegramError) {
+      // 텔레그램 오류는 전체 피드백 처리에 영향을 주지 않도록 함
+      logger.warn('텔레그램 알림 전송 중 오류:', telegramError);
     }
     
     // 성공 응답
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: '피드백이 성공적으로 제출되었습니다.',
-      data: {
-        id: savedFeedback.id,
-        timestamp: savedFeedback.timestamp
-      }
+      data: data ? data[0] : null
     });
+  } catch (error: any) {
+    logger.error('피드백 처리 중 오류 발생:', error);
     
-  } catch (error) {
-    // 예상치 못한 오류 처리
-    logger.error('피드백 API 처리 중 오류 발생', { error });
-    return NextResponse.json({ 
-      success: false, 
-      message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' 
-    }, { status: 500 });
+    return NextResponse.json(
+      { 
+        success: false,
+        error: error.message || '피드백 처리 중 오류가 발생했습니다.'
+      },
+      { status: 500 }
+    );
   }
 }
 

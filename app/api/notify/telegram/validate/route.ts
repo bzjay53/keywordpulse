@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
-import { validateTelegramChatId } from '@/lib/telegram';
-import { ApiError } from '@/lib/errors';
+import { NextRequest, NextResponse } from 'next/server';
+import { validateTelegramChatId } from '../../../../lib/telegram';
+import { ApiError } from '../../../../lib/errors';
 
 /**
  * POST /api/notify/telegram/validate
@@ -14,7 +14,7 @@ import { ApiError } from '@/lib/errors';
  * @returns {Object} 유효성 검증 결과
  * @throws {Error} 필수 매개변수 누락 시 오류 발생
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { token, chat_id } = await request.json();
 
@@ -24,34 +24,33 @@ export async function POST(request: Request) {
     }
 
     if (!chat_id) {
-      throw new ApiError(400, '텔레그램 채팅 ID가 필요합니다.');
+      throw new ApiError(400, '유효성을 검사할 텔레그램 채팅 ID가 필요합니다.');
     }
 
     // 채팅 ID 유효성 검증
     const validationResult = await validateTelegramChatId(token, chat_id);
 
     return NextResponse.json({
-      success: validationResult.valid,
-      message: validationResult.message,
-      chat_id
+      success: true,
+      ...validationResult
     });
-  } catch (error) {
-    console.error('텔레그램 채팅 ID 검증 오류:', error);
-
+  } catch (error: any) {
+    console.error('텔레그램 채팅 ID 유효성 검사 중 오류 발생:', error);
+    
+    let status = 500;
+    let errorMessage = '텔레그램 채팅 ID 유효성 검사 중 오류가 발생했습니다.';
+    
     if (error instanceof ApiError) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: error.statusCode }
-      );
+      status = error.statusCode;
+      errorMessage = error.message;
     }
-
+    
     return NextResponse.json(
       { 
         success: false, 
-        message: '채팅 ID 검증 중 오류가 발생했습니다.',
-        error: error instanceof Error ? error.message : '알 수 없는 오류'
-      },
-      { status: 500 }
+        message: errorMessage 
+      }, 
+      { status }
     );
   }
 } 

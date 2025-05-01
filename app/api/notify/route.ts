@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, formatMessageAsHTML } from '../../lib/telegram';
+import { sendTelegramMessage, formatMessageAsHTML } from '../lib/telegram';
 
 /**
  * Telegram으로 분석 결과를 전송하는 API 엔드포인트

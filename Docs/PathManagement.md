@@ -1,10 +1,10 @@
 # 경로 관리 문서 (Path Management)
 
 ## 1. 경로 관리 상태
-- **상태**: 완료 (2025.04.30)
+- **상태**: 완료 (2025.05.01)
 - **담당자**: 개발팀
 - **관련 WBS**: WBS-17 경로 관리 자동화 및 구조 개선
-- **GitHub 커밋**: dc5ff1ec
+- **GitHub 커밋**: f1d387c5
 
 ## 2. 주요 개선사항
 
@@ -14,11 +14,13 @@
 - Typescript 경로 별칭(@/) 적용으로 코드 가독성 향상
 - 경로 구조 자동 검증 및 수정 스크립트 개발
 - RAG 통합 모듈 개선 및 다국어 지원 추가
+- Vercel 배포 시 경로 참조 문제 해결을 위한 빌드 스크립트 추가
 
 ### 2.2 개발된 스크립트
 - `scripts/path-check.js`: 경로 문제 분석 스크립트
 - `scripts/path-fix.js`: 경로 자동 수정 스크립트
 - `scripts/move-app-files.js`: app/app에서 app으로 파일 이동 스크립트
+- `scripts/vercel-build.sh`: Vercel 배포 전 lib 파일을 app/lib으로 복사하는 스크립트
 
 ### 2.3 개선 결과
 - 중복 경로(app/app) 제거 및 정리
@@ -27,6 +29,7 @@
 - 일관된 import 구조 적용
 - 누락된 모듈 생성 및 통합
 - RAG 통합 모듈에 성능 최적화 및 다국어 지원 기능 추가
+- Vercel 배포 환경에서 경로 참조 문제 해결
 
 ## 3. 경로 관리 가이드라인
 
@@ -51,6 +54,8 @@
   - `@/components`: 컴포넌트 디렉토리
   - `@/lib`: 공통 라이브러리 및 유틸리티
   - `@/hooks`: 커스텀 훅
+- **Vercel 배포 시 중요**: API 라우트에서는 상대 경로 사용 권장
+  - 예: `import { foo } from '../../lib/foo'` (절대 경로 대신)
 
 ### 3.3 경로 검증 방법
 1. 경로 문제 검사: `node scripts/path-check.js`
@@ -64,6 +69,7 @@
 - 파일 이동 전에 참조 변경 사항 점검
 - 반드시 빌드 테스트 후 배포
 - 신규 모듈 개발 시 index.js에 export 추가 확인
+- **Vercel 배포시 주의**: API 라우트에서는 상대 경로를 사용하거나 vercel-build.sh 스크립트 적용
 
 ## 5. 향후 개선 계획
 - 자동 경로 검증 CI/CD 워크플로우 통합
@@ -88,7 +94,13 @@
 - `lib/index.js`: 모든 모듈 통합 export 제공
 - 각 모듈 별 타입 및 인터페이스 정의 표준화
 
-## Vercel 배포 시 경로 관련 이슈 해결 방법
+### 6.3 Vercel 배포 개선
+- `scripts/vercel-build.sh`: 빌드 전 lib/*.ts 파일을 app/lib로 복사
+- 빌드 시 app/lib/index.js 자동 생성
+- 디버그 로깅 기능 추가
+- `vercel.json` 설정 업데이트로 자동화된 빌드 프로세스 적용
+
+## 7. Vercel 배포 시 경로 관련 이슈 해결 방법
 
 ### 문제 상황
 Vercel 배포 환경에서 `@/lib/telegram`, `@/lib/errors`, `@/lib/exceptions` 등 절대 경로 참조 모듈을 찾을 수 없는 오류가 발생하였습니다.
@@ -109,21 +121,34 @@ Vercel 배포 환경에서 `@/lib/telegram`, `@/lib/errors`, `@/lib/exceptions` 
    ```
 
 2. **모듈 복제**:
-   - lib/ 디렉토리의 주요 모듈들을 app/lib/ 디렉토리로 복사하여 중복 경로 문제 해결
-   - vercel-build.sh 스크립트에 파일 복사 로직 추가:
+   - `scripts/vercel-build.sh` 스크립트를 생성하여 빌드 전 자동으로 파일 복사:
    ```bash
-   # lib 디렉토리 파일들을 app/lib 디렉토리로 복사하여 경로 해결
+   #!/bin/bash
+   # 디버그 모드 활성화
+   set -x
+   
+   # app/lib 디렉토리 생성
    mkdir -p app/lib
-   cp -f lib/telegram.ts app/lib/
-   cp -f lib/errors.ts app/lib/
-   cp -f lib/exceptions.ts app/lib/
-   cp -f lib/logger.ts app/lib/
-   cp -f lib/trends_api.ts app/lib/
-   cp -f lib/rag_engine.ts app/lib/
-   cp -f lib/rag-integration.ts app/lib/
+   
+   # lib 디렉토리 파일들을 app/lib 디렉토리로 복사
+   cp -f lib/*.ts app/lib/
+   cp -f lib/*.js app/lib/
+   
+   # 기본 빌드 실행
+   npm run build
    ```
 
-3. **통합 내보내기 파일 추가**:
+3. **상대 경로 사용**:
+   - API 라우트에서는 절대 경로 대신 상대 경로를 사용하여 모듈 참조:
+   ```typescript
+   // 변경 전
+   import { foo } from '@/lib/foo';
+   
+   // 변경 후
+   import { foo } from '../../lib/foo';
+   ```
+
+4. **통합 내보내기 파일 추가**:
    - lib/index.js 및 app/lib/index.js 파일을 추가하여 모든 모듈을 한 곳에서 내보냄
    ```javascript
    // 모든 모듈 내보내기
@@ -144,7 +169,7 @@ Vercel 배포 환경에서 `@/lib/telegram`, `@/lib/errors`, `@/lib/exceptions` 
 
 이러한 접근 방식은 로컬 개발 환경과 Vercel 배포 환경 모두에서 일관된 모듈 경로를 보장합니다.
 
-## 7. 최종 검증 결과
+## 8. 최종 검증 결과
 
 - **빌드 상태**: 성공
 - **테스트 결과**: 전체 테스트 통과

@@ -12,13 +12,14 @@ KeywordPulse 서비스의 지속적인 개선과 사용자 중심 개발을 위�
 - ✅ 피드백 데이터베이스 스키마 설계
 - ✅ 피드백 저장 API 엔드포인트 구현
 - ✅ 피드백 제출 훅(useFeedback) 개발
+- ✅ 사용자 행동 분석 시스템 구현
+- ✅ 분석 데이터 수집 및 저장 기능 구현
 
 ### 진행 중인 항목
-- ⏳ 사용자 행동 분석 로깅 설정 (60% 완료)
-- ⏳ 관리자 대시보드 개발 (10% 완료)
+- ⏳ 관리자 대시보드 개발 (15% 완료)
+- ⏳ 피드백 분류 시스템 개발 (10% 완료)
 
 ### 예정된 항목
-- 🔜 피드백 분석 프레임워크 구현
 - 🔜 피드백 우선순위 결정 알고리즘 개발
 - 🔜 사용자 여정 맵 작성
 - 🔜 A/B 테스트 프레임워크 구현
@@ -296,4 +297,111 @@ const abTestConfig = {
 - [UX 연구 방법론](docs/ux-research-methodology.md)
 - [데이터 프라이버시 정책](docs/data-privacy-policy.md)
 - [A/B 테스트 가이드라인](docs/ab-testing-guidelines.md)
-- [사용자 세그먼트 정의](docs/user-segments.md) 
+- [사용자 세그먼트 정의](docs/user-segments.md)
+
+## 새로 구현된 분석 시스템 기능
+
+### 사용자 행동 추적 모듈 (analytics.ts)
+사용자의 행동을 추적하고 수집하기 위한 핵심 모듈로, 다음 이벤트 유형을 지원합니다:
+- 페이지 조회(`PAGE_VIEW`)
+- 기능 사용(`FEATURE_USAGE`)
+- 버튼 클릭(`BUTTON_CLICK`)
+- 폼 제출(`FORM_SUBMIT`)
+- 검색(`SEARCH`)
+- 오류 발생(`ERROR`)
+- 작업 시간(`TIMING`)
+- 피드백(`FEEDBACK`)
+
+```typescript
+// 간단한 사용 예시
+import analytics from '@/lib/analytics';
+
+// 페이지 조회 이벤트 기록
+analytics.logPageView();
+
+// 버튼 클릭 이벤트 기록
+analytics.logButtonClick('search_button', 'search', { query: 'keyword' });
+
+// 기능 사용 이벤트 기록
+analytics.logFeatureUsage('keyword_analysis', 'start_analysis');
+
+// 작업 시간 측정
+analytics.measureTiming('api', 'search_request', async () => {
+  // API 호출 또는 기타 비동기 작업
+  return await fetchSearchResults(query);
+});
+```
+
+### 분석 React 훅 (useAnalytics.ts)
+React 컴포넌트에서 쉽게 사용할 수 있는 훅 기능으로, 다음 기능을 제공합니다:
+- 자동 페이지 조회 추적
+- 클릭 이벤트 캡처
+- 기능 사용 이벤트 캡처
+- 검색 이벤트 캡처
+- 작업 시간 측정
+- 에러 이벤트 캡처
+- 피드백 이벤트 캡처
+
+```typescript
+// React 컴포넌트에서 사용 예시
+import { useAnalytics } from '@/hooks/useAnalytics';
+
+function SearchComponent() {
+  const { trackSearch, trackClick, measureTask } = useAnalytics();
+  
+  const handleSearch = async (query) => {
+    trackSearch(query);
+    
+    // 검색 작업 시간 측정
+    const results = await measureTask(
+      'search', 
+      'execute_search', 
+      () => performSearch(query)
+    );
+    
+    setResults(results);
+  };
+  
+  return (
+    <button onClick={() => trackClick('search_button')}>
+      검색
+    </button>
+  );
+}
+```
+
+### 데이터베이스 설계
+사용자 행동 데이터는 Supabase의 `user_events` 테이블에 저장되며, 구조는 다음과 같습니다:
+
+```sql
+CREATE TABLE IF NOT EXISTS user_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_type TEXT NOT NULL,
+  category TEXT,
+  action TEXT,
+  label TEXT,
+  value NUMERIC,
+  path TEXT,
+  referrer TEXT,
+  duration NUMERIC,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  session_id TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 통계 분석 뷰
+데이터 분석을 위한 데이터베이스 뷰를 설계하여 다양한 인사이트를 추출할 수 있습니다:
+- `daily_page_views` - 일별 페이지 방문 통계
+- `session_page_duration` - 세션별 페이지 체류 시간
+- `feature_usage_stats` - 기능 사용 빈도 및 통계
+
+### 피드백 시스템과의 통합
+사용자 피드백 시스템과 분석 시스템을 통합하여 다음과 같은 이벤트를 추적합니다:
+- 피드백 버튼 클릭
+- 피드백 폼 열기/닫기
+- 별점 선택
+- 텍스트 입력 시작
+- 피드백 제출 성공/실패 

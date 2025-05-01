@@ -1,148 +1,137 @@
-# KeywordPulse 문서 맵
+# KeywordPulse 문서 지도
 
-이 문서는 KeywordPulse 프로젝트의 전체 문서 구조를 설명하는 맵입니다. 각 문서의 목적과 상호 관계를 이해하는 데 도움이 됩니다.
+## 개요
 
-## 1. 프로젝트 개요 문서
+이 문서는 KeywordPulse 프로젝트의 모든 문서를 체계적으로 정리한 지도입니다. 각 문서의 목적과 핵심 내용을 간략히 설명하고, 관련 문서 간의 연결을 안내합니다.
 
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [README.md](../README.md) | 프로젝트 소개 및 시작 가이드 | 모든 개발자, 신규 참여자 |
-| [SETUP.md](../SETUP.md) | 개발 환경 설정 가이드 | 신규 개발자 |
-| [ReferenceArchitecture.md](./ReferenceArchitecture.md) | 시스템 아키텍처 개요 및 구조 | 모든 개발자, 아키텍트 |
+## 문서 구조
 
-## 2. 계획 및 관리 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [libwys_Keywordpulse Wbs Plan.md](./libwys_Keywordpulse%20Wbs%20Plan.md) | 작업 분해 구조 및 일정 계획 | 프로젝트 관리자, 개발팀 |
-| [RAG_WBS.md](./RAG_WBS.md) | RAG 시스템 개발 작업 분해 구조 | AI 개발팀 |
-| [libwys_Keywordpulse_Deployment_Status.md](./libwys_Keywordpulse_Deployment_Status.md) | 배포 상태 및 계획 | DevOps, 프로젝트 관리자 |
-
-## 3. 개발 가이드라인 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [CodeQualityGuidelines.md](./CodeQualityGuidelines.md) | 코드 품질 표준 및 모범 사례 | 모든 개발자 |
-| [SecurityGuidelines.md](./SecurityGuidelines.md) | 보안 관련 가이드라인 | 모든 개발자 |
-| [PerformanceOptimization.md](./PerformanceOptimization.md) | 성능 최적화 전략 | 프론트엔드 개발자 |
-| [DependencyManagement.md](./DependencyManagement.md) | 패키지 및 의존성 관리 가이드 | 모든 개발자 |
-| [BrowserSupportPolicy.md](./BrowserSupportPolicy.md) | 지원 브라우저 정책 | 프론트엔드 개발자 |
-
-## 4. 기술 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [libwys_Keywordpulse Refactoring Doc.md](./libwys_Keywordpulse%20Refactoring%20Doc.md) | 리팩토링 계획 및 가이드 | 개발팀 |
-| [PathManagement.md](./PathManagement.md) | 파일 경로 관리 가이드 | 개발팀 |
-| [APIGuidelines.md](./APIGuidelines.md) | API 설계 및 구현 가이드 | 백엔드 개발자 |
-
-## 5. 인프라 관련 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [CICDSetup.md](./CICDSetup.md) | CI/CD 파이프라인 설정 가이드 | DevOps 엔지니어 |
-| [EnvironmentSetup.md](./EnvironmentSetup.md) | 개발/스테이징/운영 환경 설정 | DevOps 엔지니어 |
-
-## 6. 테스트 관련 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [TestingStrategy.md](./TestingStrategy.md) | 테스트 전략 및 접근 방식 | QA, 개발자 |
-| [E2ETestingGuide.md](./E2ETestingGuide.md) | 종단간 테스트 가이드 | QA 엔지니어 |
-
-## 7. 비즈니스 및 기능 문서
-
-| 문서 이름 | 설명 | 주요 대상 |
-|---------|------|----------|
-| [FeatureRequirements.md](./FeatureRequirements.md) | 기능 요구사항 명세 | 제품 관리자, 개발자 |
-| [UserJourneys.md](./UserJourneys.md) | 사용자 여정 및 시나리오 | 디자이너, 개발자 |
-
-## 문서 관계도
-
-```mermaid
-graph TD
-    README[README.md] --> SETUP[SETUP.md]
-    README --> ARCH[ReferenceArchitecture.md]
-    
-    ARCH --> DEP[DependencyManagement.md]
-    ARCH --> CODE[CodeQualityGuidelines.md]
-    ARCH --> PERF[PerformanceOptimization.md]
-    
-    WBS[libwys_Keywordpulse Wbs Plan.md] --> RAG[RAG_WBS.md]
-    WBS --> DEPLOY[libwys_Keywordpulse_Deployment_Status.md]
-    WBS --> REFACTOR[libwys_Keywordpulse Refactoring Doc.md]
-    
-    CODE --> TESTING[TestingStrategy.md]
-    CODE --> SECURITY[SecurityGuidelines.md]
-    
-    DEP --> CICD[CICDSetup.md]
-    
-    REFACTOR --> PATH[PathManagement.md]
-    
-    subgraph "프로젝트 개요"
-        README
-        SETUP
-        ARCH
-    end
-    
-    subgraph "계획 및 관리"
-        WBS
-        RAG
-        DEPLOY
-    end
-    
-    subgraph "개발 가이드라인"
-        CODE
-        SECURITY
-        PERF
-        DEP
-        BROWSER[BrowserSupportPolicy.md]
-    end
-    
-    subgraph "기술 문서"
-        REFACTOR
-        PATH
-        API[APIGuidelines.md]
-    end
-    
-    subgraph "인프라 관련"
-        CICD
-        ENV[EnvironmentSetup.md]
-    end
-    
-    subgraph "테스트 관련"
-        TESTING
-        E2E[E2ETestingGuide.md]
-    end
-    
-    subgraph "비즈니스/기능"
-        FEATURE[FeatureRequirements.md]
-        USER[UserJourneys.md]
-    end
+```
+Docs/
+├── 프로젝트 개요/
+│   ├── ProjectStructure.md    # 프로젝트 구조 문서
+│   ├── Architecture.md        # 아키텍처 문서
+│   └── RAG-System.md          # RAG 시스템 문서
+├── 개발 가이드/
+│   ├── CodeQualityGuidelines.md  # 코드 품질 가이드라인
+│   ├── Dependencies.md        # 의존성 관리 문서
+│   ├── TestingStrategy.md     # 테스트 전략 문서
+│   └── SecurityGuidelines.md  # 보안 가이드라인 문서
+├── 운영 문서/
+│   ├── CICDPipeline.md        # CI/CD 파이프라인 문서
+│   ├── PerformanceOptimization.md # 성능 최적화 가이드
+│   └── TeamCollaboration.md   # 팀 협업 가이드
+└── 참조 문서/
+    ├── APIReference.md        # API 참조 문서
+    ├── TelegramIntegration.md # 텔레그램 통합 문서
+    └── SupabaseSetup.md       # Supabase 설정 문서
 ```
 
-## 문서 관리 가이드라인
+## 문서 목록
 
-1. **문서 업데이트 빈도**:
-   - 프로젝트 개요 문서: 주요 변경 시
-   - 계획 및 관리 문서: 주간 또는 스프린트 단위
-   - 개발 가이드라인: 필요 시, 분기별 검토
-   - 기술 문서: 관련 코드 변경 시
+### 프로젝트 개요
 
-2. **문서 작성 형식**:
-   - Markdown 형식 사용
-   - 명확한 제목과 구조화된 목차
-   - 코드 예제가 있는 경우 문법 하이라이팅 사용
-   - 다이어그램 필요 시 Mermaid 또는 PlantUML 사용
+| 문서 | 설명 | 관련 문서 |
+|------|-----|----------|
+| [ProjectStructure.md](./ProjectStructure.md) | 프로젝트의 디렉토리 구조, 파일 구성, 모듈 관계 설명 | Architecture.md, Dependencies.md |
+| [Architecture.md](./Architecture.md) | 시스템 아키텍처, 컴포넌트 및 서비스 간의 상호작용 설명 | RAG-System.md, CICDPipeline.md |
+| [RAG-System.md](./RAG-System.md) | RAG(Retrieval-Augmented Generation) 시스템 구조 및 작동 방식 | PerformanceOptimization.md, APIReference.md |
 
-3. **문서 관리 책임**:
-   - 각 문서에 주 담당자 지정
-   - 문서 변경 시 PR 과정을 통한 리뷰
+### 개발 가이드
 
-4. **문서 검색 및 접근**:
-   - 이 문서 맵을 통해 모든 문서 접근
-   - README의 문서 섹션에서 핵심 문서 링크
+| 문서 | 설명 | 관련 문서 |
+|------|-----|----------|
+| [CodeQualityGuidelines.md](./CodeQualityGuidelines.md) | 코드 스타일, 포맷팅, 린팅 규칙 및 모범 사례 | TestingStrategy.md, CICDPipeline.md |
+| [Dependencies.md](./Dependencies.md) | 의존성 관리 정책, 주요 패키지 목록, 업데이트 절차 | ProjectStructure.md, SecurityGuidelines.md |
+| [TestingStrategy.md](./TestingStrategy.md) | 테스트 종류, 테스트 작성 방법, 테스트 실행 환경 | CodeQualityGuidelines.md, CICDPipeline.md |
+| [SecurityGuidelines.md](./SecurityGuidelines.md) | 보안 모범 사례, 취약점 방지, 인증 및 권한 관리 | Dependencies.md, SupabaseSetup.md |
 
----
+### 운영 문서
 
-이 문서 맵은 프로젝트 진행에 따라 지속적으로 업데이트됩니다. 누락된 문서가 있거나 새로운 문서 추가가 필요한 경우 프로젝트 관리자에게 알려주세요. 
+| 문서 | 설명 | 관련 문서 |
+|------|-----|----------|
+| [CICDPipeline.md](./CICDPipeline.md) | CI/CD 파이프라인 구성, 배포 프로세스, 자동화 워크플로우 | TestingStrategy.md, TeamCollaboration.md |
+| [PerformanceOptimization.md](./PerformanceOptimization.md) | 성능 최적화 전략, 측정 방법, 개선 사례 | RAG-System.md, APIReference.md |
+| [TeamCollaboration.md](./TeamCollaboration.md) | 협업 프로세스, 코드 리뷰, 이슈 관리, 의사소통 가이드 | CICDPipeline.md, CodeQualityGuidelines.md |
+
+### 참조 문서
+
+| 문서 | 설명 | 관련 문서 |
+|------|-----|----------|
+| [APIReference.md](./APIReference.md) | 내부 및 외부 API 엔드포인트, 요청/응답 형식, 사용 예제 | RAG-System.md, SupabaseSetup.md |
+| [TelegramIntegration.md](./TelegramIntegration.md) | 텔레그램 봇 설정, 알림 시스템, 명령어 사용법 | APIReference.md |
+| [SupabaseSetup.md](./SupabaseSetup.md) | Supabase 설정, 스키마 구성, 인증 및 스토리지 사용법 | SecurityGuidelines.md, APIReference.md |
+
+## 문서 간 주요 관계
+
+### 기능 중심 관계
+
+- **키워드 분석 기능**: RAG-System.md → APIReference.md → PerformanceOptimization.md
+- **텔레그램 알림 기능**: TelegramIntegration.md → APIReference.md → SecurityGuidelines.md
+- **사용자 인증 기능**: SupabaseSetup.md → SecurityGuidelines.md → APIReference.md
+
+### 개발 프로세스 관계
+
+- **개발 시작**: ProjectStructure.md → CodeQualityGuidelines.md → TestingStrategy.md
+- **지속적 통합**: TestingStrategy.md → CICDPipeline.md → PerformanceOptimization.md
+- **배포 프로세스**: CICDPipeline.md → SecurityGuidelines.md → TeamCollaboration.md
+
+## 문서 업데이트 정책
+
+모든 문서는 다음과 같은 상황에서 업데이트됩니다:
+
+1. **기능 변경**: 관련 기능이 추가, 수정 또는 제거될 때
+2. **구조 변경**: 프로젝트 구조, 아키텍처 또는 의존성이 변경될 때
+3. **프로세스 변경**: 개발, 테스트 또는 배포 프로세스가 변경될 때
+4. **정기 검토**: 분기별 문서 정확성 및 최신성 검토
+
+## 독자별 추천 읽기 순서
+
+### 신규 개발자
+
+1. ProjectStructure.md
+2. CodeQualityGuidelines.md
+3. Dependencies.md
+4. TeamCollaboration.md
+5. TestingStrategy.md
+
+### 백엔드 개발자
+
+1. Architecture.md
+2. RAG-System.md
+3. APIReference.md
+4. SupabaseSetup.md
+5. SecurityGuidelines.md
+
+### 프론트엔드 개발자
+
+1. ProjectStructure.md
+2. APIReference.md
+3. PerformanceOptimization.md
+4. CodeQualityGuidelines.md
+5. TelegramIntegration.md
+
+### DevOps 담당자
+
+1. CICDPipeline.md
+2. Architecture.md
+3. SecurityGuidelines.md
+4. PerformanceOptimization.md
+5. Dependencies.md
+
+## 문서 기여 가이드
+
+KeywordPulse 문서에 기여하려면 다음 지침을 따라주세요:
+
+1. 문서는 마크다운(.md) 형식으로 작성합니다.
+2. 새 문서를 추가할 경우 이 문서 지도를 업데이트합니다.
+3. 문서 상단에 마지막 업데이트 날짜와 작성자를 기록합니다.
+4. 특정 코드나 구성에 대한 예제를 포함할 때는 실제 동작하는 예제를 사용합니다.
+5. 관련 문서를 명확히 링크합니다.
+
+## 변경 이력
+
+| 날짜 | 버전 | 설명 | 작성자 |
+|------|------|------|--------|
+| 2025-05-01 | 0.1 | 초기 문서 지도 작성 | 개발팀 |
+| 2025-05-15 | 0.2 | 참조 문서 섹션 추가 | 개발팀 |

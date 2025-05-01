@@ -292,4 +292,281 @@ jobs:
 
 - [Architecture.md](./Architecture.md): 시스템 아키텍처 문서
 - [TestingStrategy.md](./TestingStrategy.md): 테스트 전략 문서
-- [SecurityGuidelines.md](./SecurityGuidelines.md): 보안 가이드라인 
+- [SecurityGuidelines.md](./SecurityGuidelines.md): 보안 가이드라인
+
+# KeywordPulse CI/CD 파이프라인 문서
+
+## 개요
+
+KeywordPulse 프로젝트는 GitHub Actions와 Vercel을 활용한 지속적 통합 및 배포(CI/CD) 파이프라인을 구축하여 개발 및 배포 프로세스를 자동화하였습니다. 이 문서는 해당 파이프라인의 구조, 작동 방식, 그리고 관리 방법을 설명합니다.
+
+## 파이프라인 아키텍처
+
+![CI/CD 파이프라인 다이어그램](./diagrams/cicd-pipeline.png)
+
+### 파이프라인 단계
+
+1. **코드 변경 감지**
+   - GitHub 저장소에 푸시 또는 PR 생성
+
+2. **자동화된 테스트**
+   - 린팅 및 코드 품질 검사
+   - 단위 테스트
+   - 통합 테스트
+
+3. **빌드 프로세스**
+   - 코드 컴파일
+   - 번들링 및 최적화
+
+4. **미리보기 배포** (PR 환경)
+   - Vercel 미리보기 환경 배포
+   - 자동 URL 생성 및 PR에 댓글 추가
+
+5. **프로덕션 배포** (main 브랜치)
+   - 프로덕션 환경 배포
+   - 환경 변수 및 구성 적용
+
+## GitHub Actions 워크플로우
+
+KeywordPulse는 다음과 같은 GitHub Actions 워크플로우를 사용합니다:
+
+### 1. 품질 검사 워크플로우 (`quality-check.yml`)
+
+```yaml
+name: Quality Check
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run ESLint
+        run: npm run lint
+      - name: Check Types
+        run: npm run type-check
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+```
+
+### 2. 빌드 검증 워크플로우 (`build-check.yml`)
+
+```yaml
+name: Build Check
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build project
+        run: npm run build
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: .next
+```
+
+## Vercel 배포 설정
+
+### 프로젝트 설정
+
+Vercel에서는 다음과 같은 프로젝트 설정을 사용합니다:
+
+1. **기본 설정**
+   - 프레임워크 프리셋: Next.js
+   - 루트 디렉토리: `/`
+   - 빌드 명령어: `bash vercel-build.sh`
+   - 출력 디렉토리: `.next`
+
+2. **환경 변수**
+   - 프로덕션, 프리뷰, 개발 환경별 환경 변수 설정
+   - 비밀 값은 Vercel 프로젝트 설정에서 암호화하여 저장
+
+3. **도메인 설정**
+   - 프로덕션 도메인: `keywordpulse.app`
+   - 커스텀 도메인 SSL 인증서 적용
+
+### 배포 통합
+
+GitHub 저장소와 Vercel 프로젝트는 다음과 같이 통합되어 있습니다:
+
+1. **자동 배포 트리거**
+   - `main` 브랜치에 푸시 → 프로덕션 배포
+   - Pull Request 생성 → 미리보기 배포
+
+2. **배포 설정**
+   - 정적 파일 캐싱 최적화
+   - Serverless 함수 리전 설정
+   - 빌드 캐시 최적화
+
+## 배포 전략
+
+### 브랜치 전략
+
+KeywordPulse는 다음과 같은 Git 브랜치 전략을 사용합니다:
+
+1. **main**: 프로덕션 코드
+2. **dev**: 개발 중인 코드
+3. **feature/{name}**: 새로운 기능 개발
+4. **bugfix/{name}**: 버그 수정
+5. **release/{version}**: 릴리스 준비
+
+### 배포 프로세스
+
+1. **개발 단계**
+   - 개발자는 `feature/*` 또는 `bugfix/*` 브랜치에서 작업
+   - 작업 완료 후 `dev` 브랜치로 PR 생성
+   - 자동화된 테스트 및 빌드 검증 진행
+   - 코드 리뷰 후 승인 시 `dev` 브랜치로 병합
+
+2. **릴리스 준비**
+   - `dev` 브랜치에서 `release/{version}` 브랜치 생성
+   - 최종 테스트 및 QA 진행
+   - 릴리스 노트 작성 및 버전 업데이트
+
+3. **프로덕션 배포**
+   - `release/{version}` 브랜치에서 `main` 브랜치로 PR 생성
+   - 최종 승인 후 `main` 브랜치로 병합
+   - GitHub Actions를 통한 최종 검증
+   - Vercel을 통한 프로덕션 자동 배포
+
+## 롤백 프로세스
+
+배포 후 문제 발생 시 신속한 롤백을 위한 프로세스:
+
+1. **Vercel 롤백**
+   - Vercel 대시보드에서 이전 배포로 롤백
+   - 롤백은 1-2분 내에 완료됨
+
+2. **코드 롤백**
+   - `main` 브랜치를 이전 상태로 되돌리는 PR 생성
+   - 긴급 승인 후 병합
+   - 새로운 배포 자동 트리거
+
+## 모니터링 및 알림
+
+### 배포 알림
+
+다음 채널을 통해 배포 상태 알림을 제공합니다:
+
+1. **Slack**
+   - GitHub Actions 및 Vercel 통합
+   - 배포 성공/실패 알림
+
+2. **이메일**
+   - 팀 이메일로 주요 배포 알림
+   - 실패 시 담당자에게 즉시 알림
+
+### 모니터링
+
+배포 후 시스템 모니터링:
+
+1. **Sentry**
+   - 실시간 오류 모니터링
+   - 성능 모니터링
+
+2. **Vercel Analytics**
+   - 배포 성능 분석
+   - Edge 함수 성능 분석
+
+3. **자체 모니터링**
+   - API 응답 시간 모니터링
+   - 서비스 가용성 체크
+
+## 보안 스캔
+
+파이프라인에는 다음과 같은 보안 스캔이 포함되어 있습니다:
+
+1. **의존성 취약점 스캔**
+   ```yaml
+   - name: Security scan
+     run: npm audit --production
+   ```
+
+2. **코드 취약점 분석**
+   - CodeQL 스캔
+   - SAST(Static Application Security Testing)
+
+## 성능 최적화
+
+CI/CD 파이프라인 성능 최적화를 위한 전략:
+
+1. **캐싱**
+   - npm 의존성 캐싱
+   - Next.js 빌드 캐싱
+
+2. **병렬 작업**
+   - 테스트 및 빌드 병렬화
+   - 독립적인 작업 분리
+
+## 개발자 워크플로우
+
+개발자는 다음과 같은 워크플로우를 따릅니다:
+
+1. 최신 `dev` 브랜치에서 feature 브랜치 생성
+2. 변경 사항 구현 및 로컬 테스트
+3. 커밋 및 푸시
+4. GitHub에서 PR 생성
+5. 자동화된 검증 확인
+6. 코드 리뷰 요청 및 피드백 반영
+7. PR 병합 승인
+
+## 파이프라인 유지 관리
+
+### 정기 점검
+
+1. **월간 점검**
+   - 워크플로우 성능 분석
+   - 불필요한 단계 최적화
+
+2. **분기별 업데이트**
+   - GitHub Actions 액션 버전 업데이트
+   - 새로운 CI/CD 도구 및 기능 평가
+
+## 참고 자료
+
+- [GitHub Actions 문서](https://docs.github.com/en/actions)
+- [Vercel 배포 문서](https://vercel.com/docs/deployments/overview)
+- [Next.js 배포 가이드](https://nextjs.org/docs/deployment) 

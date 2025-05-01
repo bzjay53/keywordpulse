@@ -1,117 +1,267 @@
-# KeywordPulse 프로젝트 구조도
-
-## 목차
-- [개요](#개요)
-- [디렉토리 구조](#디렉토리-구조)
-- [주요 구성 요소](#주요-구성-요소)
-- [기술 스택](#기술-스택)
-- [의존성 관계](#의존성-관계)
-- [데이터 흐름](#데이터-흐름)
-- [관련 문서](#관련-문서)
+# KeywordPulse 프로젝트 구조
 
 ## 개요
-KeywordPulse는 Next.js 14 기반의 웹 애플리케이션으로, 키워드 분석과 추적을 위한 솔루션을 제공합니다. 이 문서는 프로젝트의 전체적인 구조와 주요 컴포넌트들의 역할 및 상호 작용을 설명합니다.
+
+KeywordPulse는 Next.js 기반의, 키워드 분석 및 트렌드 파악을 위한 웹 애플리케이션입니다. 이 문서는 프로젝트의 디렉토리 구조와 주요 컴포넌트, 파일의 역할을 설명합니다.
 
 ## 디렉토리 구조
 
 ```
 keywordpulse/
-├── app/                     # 애플리케이션 핵심 코드
-│   ├── api/                 # API 라우트
-│   │   ├── metrics/         # 성능 측정 API
-│   │   ├── track/           # 사용자 이벤트 추적 API
-│   │   ├── search/          # 키워드 검색 API
-│   │   ├── analyze/         # 키워드 분석 API
-│   │   ├── notify/          # 알림 관련 API
-│   │   └── ...
-│   ├── auth/                # 인증 관련 컴포넌트
-│   ├── components/          # 재사용 가능한 UI 컴포넌트
-│   ├── hooks/               # 커스텀 React 훅
-│   ├── lib/                 # 유틸리티 및 핵심 라이브러리
-│   │   ├── analytics.ts     # 분석 관련 유틸리티
-│   │   ├── logger.ts        # 로깅 유틸리티
-│   │   └── ...
-│   ├── styles/              # 전역 스타일 및 테마
-│   └── ...
-├── public/                  # 정적 파일
-├── Docs/                    # 프로젝트 문서
-│   ├── Architecture.md
-│   ├── BrowserSupportPolicy.md
-│   ├── CICDPipeline.md
-│   ├── CodeQualityGuidelines.md
-│   ├── Dependencies.md
-│   ├── DocumentMap.md
-│   ├── ProjectStructure.md
-│   ├── RAG_WBS.md
-│   ├── TestingStrategy.md
-│   └── ...
-├── tests/                   # 테스트 코드
-│   ├── unit/
-│   ├── integration/
-│   └── e2e/
-├── .env.example             # 환경 변수 예제
-├── .eslintrc.js             # ESLint 설정
-├── .gitignore               # Git 무시 파일 목록
-├── jest.config.js           # Jest 설정
-├── next.config.js           # Next.js 설정
-├── package.json             # 패키지 정보 및 의존성
-├── postcss.config.js        # PostCSS 설정
-├── tailwind.config.js       # Tailwind CSS 설정
-└── tsconfig.json            # TypeScript 설정
+├── app/                 # Next.js App Router 구조
+│   ├── api/             # API 라우트 (서버 API 엔드포인트)
+│   ├── components/      # 앱 전용 컴포넌트
+│   ├── lib/             # 앱 전용 라이브러리 코드
+│   ├── [routes]/        # 각 페이지 라우트
+│   ├── layout.tsx       # 루트 레이아웃
+│   └── page.tsx         # 인덱스 페이지
+├── components/          # 공통 컴포넌트
+├── hooks/               # 커스텀 React 훅
+├── lib/                 # 공유 라이브러리 코드
+├── public/              # 정적 파일 (이미지 등)
+├── scripts/             # 유틸리티 스크립트
+├── tests/               # 테스트 코드
+├── Docs/                # 프로젝트 문서
+├── .next/               # Next.js 빌드 출력 (git ignore)
+├── node_modules/        # 노드 모듈 (git ignore)
+├── .env.local           # 환경 변수 (git ignore)
+├── next.config.js       # Next.js 구성
+├── package.json         # 프로젝트 정보 및 의존성
+└── tsconfig.json        # TypeScript 구성
 ```
 
-## 주요 구성 요소
+## 주요 디렉토리 설명
 
-### 프론트엔드
-- **페이지/컴포넌트**: Next.js App Router를 사용한 모던 React 컴포넌트
-- **상태 관리**: React Context API 및 커스텀 훅
-- **스타일링**: Tailwind CSS와 CSS Modules
-- **클라이언트-서버 통신**: React Query 및 fetch API
+### `/app`
 
-### 백엔드
-- **API 라우트**: Next.js Edge & Serverless 함수
-- **데이터베이스**: Supabase(PostgreSQL)
-- **인증**: Supabase Auth
-- **캐싱**: 지능형 캐싱 전략
-- **분석**: 자체 분석 시스템 및 서드파티 통합
+Next.js 13 이상의 App Router 구조를 사용합니다. 각 폴더는 라우트 경로를 정의하며, 내부의 `page.tsx` 파일이 해당 경로의 페이지 컴포넌트가 됩니다.
 
-### 인프라
-- **호스팅**: Vercel
-- **CI/CD**: GitHub Actions + Vercel 통합
-- **모니터링**: Sentry + 자체 로깅 시스템
-- **보안**: 모던 웹 보안 프레임워크
+```
+app/
+├── api/                 # 서버 API 엔드포인트
+│   ├── analyze/         # 키워드 분석 API
+│   ├── feedback/        # 사용자 피드백 API
+│   ├── metrics/         # 성능 지표 API
+│   ├── notify/          # 알림 관련 API
+│   │   ├── telegram/    # 텔레그램 알림 API
+│   │   └── ...
+│   ├── search/          # 검색 API
+│   ├── trend/           # 트렌드 분석 API
+│   └── ...
+├── auth/                # 인증 관련 페이지
+├── admin/               # 관리자 페이지
+├── components/          # 앱 전용 컴포넌트
+├── help/                # 도움말 페이지
+├── lib/                 # 앱 전용 라이브러리
+├── profile/             # 사용자 프로필 페이지
+└── trends/              # 트렌드 분석 페이지
+```
 
-## 기술 스택
-- **언어**: TypeScript, JavaScript
-- **프레임워크**: Next.js 14, React 18
-- **스타일링**: Tailwind CSS
-- **데이터베이스**: Supabase
-- **테스트**: Jest, React Testing Library
-- **CI/CD**: GitHub Actions, Vercel 배포
-- **모니터링**: Sentry, 자체 로깅 시스템
-- **성능 측정**: Web Vitals API
+### `/components`
 
-## 의존성 관계
-주요 컴포넌트들의 의존성 관계는 다음과 같습니다:
+재사용 가능한 UI 컴포넌트가 위치합니다. 폴더 구조는 기능과 UI 영역으로 구분되어 있습니다.
 
-1. **UI 컴포넌트** → **커스텀 훅** → **API 요청 함수** → **백엔드 API**
-2. **분석 시스템** → **로깅 시스템** → **메트릭 저장소**
-3. **인증 시스템** → **사용자 권한 관리** → **보호된 리소스 접근**
+```
+components/
+├── ui/                  # 기본 UI 컴포넌트
+│   ├── button.tsx
+│   ├── card.tsx
+│   ├── input.tsx
+│   └── ...
+├── layout/              # 레이아웃 컴포넌트
+│   ├── Header.tsx
+│   ├── Footer.tsx
+│   ├── Sidebar.tsx
+│   └── ...
+├── charts/              # 데이터 시각화 컴포넌트
+├── forms/               # 폼 관련 컴포넌트
+└── keyword/             # 키워드 분석 관련 컴포넌트
+```
+
+### `/lib`
+
+애플리케이션 전반에서 사용되는 유틸리티 함수, 서비스, 모듈을 포함합니다.
+
+```
+lib/
+├── analytics.ts         # 분석 관련 유틸리티
+├── errors.ts            # 오류 처리 클래스
+├── exceptions.ts        # 예외 처리 클래스
+├── logger.ts            # 로깅 유틸리티
+├── rag_engine.ts        # RAG 검색 엔진
+├── rag-integration.ts   # RAG 통합 모듈
+├── supabaseClient.ts    # Supabase 클라이언트
+├── telegram.ts          # 텔레그램 API 유틸리티
+└── trends_api.ts        # 트렌드 데이터 API 클라이언트
+```
+
+### `/hooks`
+
+React 커스텀 훅을 포함합니다.
+
+```
+hooks/
+├── useAuth.ts           # 인증 관련 훅
+├── useDebounce.ts       # 디바운스 기능 훅
+├── useFetch.ts          # 데이터 페칭 훅
+├── useKeywordAnalysis.ts # 키워드 분석 훅
+└── useLocalStorage.ts   # 로컬 스토리지 관리 훅
+```
+
+## 주요 파일 설명
+
+### 구성 파일
+
+- **next.config.js**: Next.js 설정 파일로, 환경 변수, 웹팩 설정, 이미지 최적화 옵션 등을 포함
+- **tsconfig.json**: TypeScript 설정 파일
+- **vercel.json**: Vercel 배포 구성 파일
+- **.vercelignore**: Vercel 배포 시 제외할 파일 목록
+- **package.json**: 프로젝트 메타데이터 및 의존성 목록
+
+### 핵심 애플리케이션 파일
+
+- **app/layout.tsx**: 전체 애플리케이션의 기본 레이아웃
+- **app/page.tsx**: 메인 랜딩 페이지
+- **app/api/**/route.ts**: 서버 API 엔드포인트 구현
+- **lib/rag_engine.ts**: RAG 검색 엔진 구현
+- **lib/trends_api.ts**: 트렌드 데이터 API 통합
+
+## 모듈 의존성 다이어그램
+
+```mermaid
+graph TD
+    A[페이지 컴포넌트] --> B[UI 컴포넌트]
+    A --> C[데이터 훅]
+    C --> D[API 클라이언트]
+    D --> E[백엔드 API]
+    E --> F[RAG 엔진]
+    F --> G[외부 API]
+    F --> H[데이터베이스]
+```
+
+## 코드 구성 패턴
+
+### 페이지 컴포넌트
+
+```typescript
+// app/trends/page.tsx 예제
+export default function TrendsPage() {
+  // 데이터 페칭 및 상태 관리
+  const { data, isLoading, error } = useTrendData();
+  
+  // 로딩 및 오류 처리
+  if (isLoading) return <Loading />;
+  if (error) return <ErrorComponent message={error.message} />;
+  
+  // 페이지 렌더링
+  return (
+    <Layout>
+      <TrendHeader title="트렌드 분석" />
+      <TrendDashboard data={data} />
+    </Layout>
+  );
+}
+```
+
+### API 라우트
+
+```typescript
+// app/api/trend/route.ts 예제
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchTrendData } from '@/lib/trends_api';
+
+export async function GET(request: NextRequest) {
+  try {
+    // 쿼리 파라미터 추출
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category') || 'all';
+    
+    // 데이터 처리
+    const data = await fetchTrendData(category);
+    
+    // 응답 반환
+    return NextResponse.json({ success: true, data });
+  } catch (error) {
+    // 오류 처리
+    return NextResponse.json(
+      { success: false, message: error.message },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### 커스텀 훅
+
+```typescript
+// hooks/useKeywordAnalysis.ts 예제
+import { useState, useEffect } from 'react';
+import { analyzeKeyword } from '@/lib/rag-integration';
+
+export function useKeywordAnalysis(keyword: string) {
+  const [data, setData] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    if (!keyword) return;
+    
+    const fetchData = async () => {
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const result = await analyzeKeyword(keyword);
+        setData(result);
+      } catch (err) {
+        setError(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [keyword]);
+  
+  return { data, isLoading, error };
+}
+```
+
+## 환경 설정
+
+프로젝트는 다음 환경 변수를 활용합니다:
+
+```
+# .env.local 예제
+NEXT_PUBLIC_SUPABASE_URL=<Supabase URL>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<Supabase Anon Key>
+TELEGRAM_BOT_TOKEN=<Telegram Bot Token>
+TELEGRAM_CHAT_ID=<Telegram Chat ID>
+OPENAI_API_KEY=<OpenAI API Key>
+```
+
+## 배포 구조
+
+프로젝트는 Vercel 플랫폼에 배포되며, 다음과 같은 구조로 실행됩니다:
+
+1. **프론트엔드**: Next.js 정적/서버 렌더링 페이지
+2. **API**: Next.js API 라우트 (서버리스 함수)
+3. **데이터베이스**: Supabase (PostgreSQL)
+4. **이미지 저장소**: Vercel Blob Storage
+5. **인증**: Supabase Auth
 
 ## 데이터 흐름
-KeywordPulse의 주요 데이터 흐름:
 
-1. **키워드 검색 프로세스**:
-   - 사용자 입력 → 검색 API → 검색 결과 처리 → UI 렌더링 → 사용자 행동 추적
+1. 사용자가 UI에서 작업 수행
+2. 프론트엔드 컴포넌트가 커스텀 훅을 통해 데이터 요청
+3. 훅이 내부 API 엔드포인트 호출
+4. API 엔드포인트가 필요한 서비스 호출 (RAG 엔진, 외부 API 등)
+5. 데이터 변환 및 처리 후 응답 반환
+6. UI 업데이트
 
-2. **분석 프로세스**:
-   - 키워드 입력 → 분석 API → 데이터 가공 → 시각화 → 추천 생성
+## 추가 참고사항
 
-3. **알림 프로세스**:
-   - 트리거 이벤트 → 알림 생성 → 채널별 전송(텔레그램 등)
-
-## 관련 문서
-- [Architecture.md](./Architecture.md): 시스템 아키텍처 상세 설명
-- [Dependencies.md](./Dependencies.md): 의존성 관리 가이드
-- [API 문서](./libwys_KeywordPulse%20API.md): API 스펙 및 사용법
-- [배포 가이드](./libwys_Keywordpulse_Vercel_Deployment.md): 배포 프로세스 설명 
+- **타입 시스템**: 프로젝트 전체에 TypeScript를 사용하여 정적 타입 검사
+- **스타일링**: Tailwind CSS를 주로 사용하며, 컴포넌트 스타일링에 적용
+- **상태 관리**: 복잡한 전역 상태는 React Context API로 관리
+- **모듈 가져오기**: 절대 경로 임포트 (@/components, @/lib 등)를 사용 

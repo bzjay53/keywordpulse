@@ -7,6 +7,7 @@ import logger from './logger';
 import OpenAI from 'openai';
 import crypto from 'crypto';
 import { performVectorSearch, storeVectorData, VectorData } from './supabaseClient';
+import responseFormatter, { ResponseFormatOptions, FormattedResponse } from './response_formatter';
 
 // OpenAI API 클라이언트 초기화
 // 환경 변수가 설정되어 있지 않은 경우 개발 목적으로 기본값을 사용
@@ -441,12 +442,14 @@ export async function hybridSearch(
  * 검색 결과를 기반으로 콘텐츠를 생성합니다
  * @param query 사용자 쿼리
  * @param searchResults 검색 결과
+ * @param formatOptions 응답 형식 옵션
  * @returns 생성된 콘텐츠와 인용 정보
  */
 export async function generateFromResults(
   query: string,
-  searchResults: RagSearchResult
-): Promise<RagGenerationResult> {
+  searchResults: RagSearchResult,
+  formatOptions: ResponseFormatOptions = {}
+): Promise<FormattedResponse> {
   try {
     logger.log({
       message: `RAG 콘텐츠 생성 시작: "${query}"`,
@@ -456,12 +459,14 @@ export async function generateFromResults(
 
     // 검색 결과가 없으면 기본 응답
     if (!searchResults.results || searchResults.results.length === 0) {
-      return {
+      const defaultResponse: RagGenerationResult = {
         sourceQuery: query,
         generatedContent: '관련 정보를 찾을 수 없습니다.',
         citations: [],
         confidence: 0
       };
+      
+      return responseFormatter.formatRagResponse(defaultResponse, formatOptions);
     }
 
     // 검색 결과를 컨텍스트로 포맷팅
@@ -486,12 +491,27 @@ export async function generateFromResults(
 
     const generatedContent = response.choices[0].message.content;
 
-    return {
+    // 생성 결과 객체 생성
+    const generationResult: RagGenerationResult = {
       sourceQuery: query,
       generatedContent: generatedContent.trim(),
       citations: searchResults.results,
-      confidence: 0.85 // 실제로는 모델의 확신도 또는 다른 메트릭을 사용할 수 있습니다
+      confidence: 0.85 // 초기 신뢰도 값 (나중에 평가됨)
     };
+
+    // response_formatter를 사용하여 응답 형식화
+    const formattedResponse = await responseFormatter.formatRagResponse(generationResult, formatOptions);
+
+    logger.log({
+      message: `RAG 콘텐츠 생성 완료: "${query}"`,
+      level: 'info',
+      context: { 
+        responseLength: formattedResponse.content.length,
+        confidenceLevel: formattedResponse.metadata.confidenceLevel 
+      }
+    });
+
+    return formattedResponse;
   } catch (error) {
     logger.error({
       message: `RAG 콘텐츠 생성 실패: ${error.message}`,

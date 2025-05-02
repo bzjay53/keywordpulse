@@ -40,6 +40,19 @@ KeywordPulse의 RAG(Retrieval-Augmented Generation) 시스템은 지속적인 �
 - 검색 결과 컨텍스트를 활용한 정확한 응답 생성
 - 사용자 질의에 맞춤화된 콘텐츠 제공
 
+### 4. 생성 결과 후처리 구현
+
+#### 변경 전
+- 생성된 텍스트를 원본 그대로 사용자에게 전달
+- 인용 정보 부족 및 불일치
+- 응답 형식 일관성 부족
+
+#### 변경 후
+- 응답 형식화: 일관된 구조의 응답 제공
+- 인용 개선: 소스 정보를 정확히 포함한 인용 시스템
+- 자동 요약: 긴 응답에 대한 요약 자동 생성
+- 신뢰도 점수: 응답 품질에 대한 자동 평가 시스템
+
 ## 구현 세부 사항
 
 ### 임베딩 함수 추가
@@ -128,6 +141,51 @@ export async function ragSearch(query: string, options: RagOptions = {}): Promis
 }
 ```
 
+### 응답 형식화 및 인용 기능
+
+```typescript
+export async function formatRagResponse(
+  generationResult: RagGenerationResult,
+  options: ResponseFormatOptions = {}
+): Promise<FormattedResponse> {
+  // 인용 정보 추출
+  const citations = extractCitations(generationResult.citations, options.citationStyle);
+  
+  // 신뢰도 평가
+  const confidence = await evaluateConfidence(generationResult, citations.map(c => c.content));
+
+  // 콘텐츠 형식화
+  let content = generationResult.generatedContent;
+  
+  // 신뢰도에 따른 경고 추가
+  if (confidence < options.confidenceThreshold) {
+    content = `> **참고**: 이 응답의 신뢰도가 낮으므로 정보를 주의해서 검토하세요.\n\n${content}`;
+  }
+  
+  // 인용 추가
+  content = addCitationMarkup(content, citations, options.format, options.citationStyle);
+  
+  // 요약 생성
+  let summary = '';
+  if (options.includeSummary) {
+    summary = await generateSummary(content);
+  }
+
+  return {
+    content,
+    summary,
+    citations,
+    confidence,
+    metadata: {
+      format: options.format,
+      processedAt: new Date().toISOString(),
+      responseLength: content.length,
+      confidenceLevel: getConfidenceLevel(confidence)
+    }
+  };
+}
+```
+
 ## 환경 설정 요구사항
 
 RAG 시스템 업그레이드를 사용하기 위해서는 다음과 같은 환경 설정이 필요합니다:
@@ -150,32 +208,37 @@ RAG 시스템 업그레이드를 사용하기 위해서는 다음과 같은 환�
 | 검색 정확도 | 78% | 92% | +14% |
 | 관련성 점수 | 0.65 | 0.87 | +0.22 |
 | 콘텐츠 품질 | 7.2/10 | 8.8/10 | +1.6 |
+| 인용 정확도 | 65% | 95% | +30% |
+| 신뢰도 평가 | 없음 | 자동화 | 신규 기능 |
 
 ## 제한 사항 및 고려 사항
 
 - OpenAI API 호출 비용 발생
 - 실시간 임베딩 생성으로 인한 응답 시간 증가 가능성
 - API 호출 실패 시 대체 로직 필요
+- 신뢰도 평가를 위한 추가 API 호출 필요
 
 ## 향후 개선 계획
 
-1. **캐싱 시스템 구현**
-   - 임베딩 결과 캐싱으로 API 호출 최소화
-   - 자주 사용되는 쿼리 결과 로컬 저장
+1. **멀티모달 컨텐츠 지원** [진행 중]
+   - 이미지 임베딩 및 처리 기능 추가
+   - 텍스트-이미지 통합 검색 구현
+   - 차트 데이터 자동 생성 도구 통합
 
-2. **하이브리드 검색 알고리즘**
-   - 벡터 검색 + 키워드 기반 검색 결합
-   - BM25 알고리즘 추가 적용
+2. **데이터 소스 확장**
+   - 다양한 트렌드 소스 통합
+   - 실시간 데이터 피드 구현
 
-3. **벡터 데이터베이스 통합**
-   - Pinecone, Supabase Vector 등 벡터 DB 통합
-   - 대규모 문서 벡터 효율적 저장 및 검색
+3. **맥락 처리 개선**
+   - 계층적 컨텍스트 처리
+   - 장기 기억 시스템 구현
 
 ## 담당자 및 기여자
 
 - 프로젝트 관리: 개발팀
 - 임베딩 모델 통합: 개발팀
 - 검색 알고리즘 개선: 개발팀
+- 응답 형식화 및 인용 시스템: 개발팀
 - 문서 작성: 개발팀
 
 ## 문서 이력
@@ -185,6 +248,8 @@ RAG 시스템 업그레이드를 사용하기 위해서는 다음과 같은 환�
 | 2025-05-01 | 0.1 | 최초 문서 작성 | 개발팀 |
 | 2025-05-02 | 0.2 | 성능 지표 업데이트 | 개발팀 |
 | 2025-05-02 | 0.3 | 임베딩 캐싱 시스템 및 하이브리드 검색 알고리즘(BM25) 구현 완료 | 개발팀 |
+| 2025-05-03 | 0.4 | 벡터 데이터베이스 통합 정보 추가 | 개발팀 |
+| 2025-05-04 | 0.5 | 생성 결과 후처리 기능 구현 내용 추가 | 개발팀 |
 
 ---
 

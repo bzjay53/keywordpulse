@@ -31,6 +31,8 @@ var APIError = /** @class */ (function (_super) {
     return APIError;
 }(Error));
 export { APIError };
+// 이전 코드와의 호환성을 위한 별칭
+export { APIError as ApiError };
 /**
  * 인증과 관련된 오류를 표현하는 사용자 정의 오류 클래스입니다.
  */

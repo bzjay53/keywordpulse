@@ -107,7 +107,7 @@ export function POST(request) {
                     status_1 = 500;
                     errorMessage = '분석 결과 전송 중 오류가 발생했습니다.';
                     if (error_1 instanceof ApiError) {
-                        status_1 = error_1.statusCode;
+                        status_1 = error_1.status;
                         errorMessage = error_1.message;
                     }
                     return [2 /*return*/, NextResponse.json({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode, validateTelegramConfig } from '../../../../lib/telegram';
-import { ApiError } from '../../../../lib/exceptions';
+import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode, validateTelegramConfig } from '@/lib/telegram';
+import { ApiError } from '@/lib/exceptions';
 
 // 정적 내보내기와 호환되도록 force-dynamic 설정 제거
 // export const dynamic = 'force-dynamic';
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     let errorMessage = '텔레그램 연결 테스트 중 오류가 발생했습니다.';
     
     if (error instanceof ApiError) {
-      status = error.statusCode;
+      status = error.status;
       errorMessage = error.message;
     } else if (error.response) {
       // 텔레그램 API 오류 처리

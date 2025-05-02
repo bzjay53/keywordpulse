@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import logger from '../../lib/logger';
-import { EventType } from '../../lib/analytics';
+import logger from '@/lib/logger';
+import { EventType } from '@/lib/analytics';
 
 // Edge 런타임 설정
 export const runtime = 'edge';

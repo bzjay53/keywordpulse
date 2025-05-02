@@ -36,7 +36,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { NextResponse } from 'next/server';
 import { sendMessageToMultipleChats, formatErrorMessage } from '@/lib/telegram';
-import { ApiError } from '@/lib/errors';
+import { ApiError } from '@/lib/exceptions';
 /**
  * 여러 채팅 ID로 텔레그램 메시지를 보내는 API 엔드포인트
  *

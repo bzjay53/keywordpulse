@@ -34,11 +34,15 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { createClient } from '@supabase/supabase-js';
+import { createClient as supabaseCreateClient } from '@supabase/supabase-js';
 // Supabase 클라이언트 초기화
 var supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 var supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-export var supabase = createClient(supabaseUrl, supabaseAnonKey);
+export var supabase = supabaseCreateClient(supabaseUrl, supabaseAnonKey);
+// createClient 함수 export
+export function createClient() {
+    return supabaseCreateClient(supabaseUrl, supabaseAnonKey);
+}
 // 로그인 함수
 export function signIn(email, password) {
     return __awaiter(this, void 0, void 0, function () {

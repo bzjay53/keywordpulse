@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, formatKeywordAnalysisMessage } from '../../../lib/telegram';
-import { ApiError } from '../../../lib/exceptions';
+import { sendTelegramMessage, formatKeywordAnalysisMessage } from '@/lib/telegram';
+import { ApiError } from '@/lib/exceptions';
 
 /**
  * 키워드 분석 결과를 텔레그램으로 전송하는 API 엔드포인트
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     let errorMessage = '분석 결과 전송 중 오류가 발생했습니다.';
     
     if (error instanceof ApiError) {
-      status = error.statusCode;
+      status = error.status;
       errorMessage = error.message;
     }
     

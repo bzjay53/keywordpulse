@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateTelegramChatId } from '../../../../lib/telegram';
-import { ApiError } from '../../../../lib/errors';
+import { validateTelegramChatId } from '@/lib/telegram';
+import { ApiError } from '@/lib/exceptions';
 
 /**
  * POST /api/notify/telegram/validate
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     let errorMessage = '텔레그램 채팅 ID 유효성 검사 중 오류가 발생했습니다.';
     
     if (error instanceof ApiError) {
-      status = error.statusCode;
+      status = error.status;
       errorMessage = error.message;
     }
     

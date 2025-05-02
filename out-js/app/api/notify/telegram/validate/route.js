@@ -1,3 +1,14 @@
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -36,7 +47,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import { NextResponse } from 'next/server';
 import { validateTelegramChatId } from '@/lib/telegram';
-import { ApiError } from '@/lib/errors';
+import { ApiError } from '@/lib/exceptions';
 /**
  * POST /api/notify/telegram/validate
  *
@@ -51,7 +62,7 @@ import { ApiError } from '@/lib/errors';
  */
 export function POST(request) {
     return __awaiter(this, void 0, void 0, function () {
-        var _a, token, chat_id, validationResult, error_1;
+        var _a, token, chat_id, validationResult, error_1, status_1, errorMessage;
         return __generator(this, function (_b) {
             switch (_b.label) {
                 case 0:
@@ -64,27 +75,25 @@ export function POST(request) {
                         throw new ApiError(400, '텔레그램 봇 토큰이 필요합니다.');
                     }
                     if (!chat_id) {
-                        throw new ApiError(400, '텔레그램 채팅 ID가 필요합니다.');
+                        throw new ApiError(400, '유효성을 검사할 텔레그램 채팅 ID가 필요합니다.');
                     }
                     return [4 /*yield*/, validateTelegramChatId(token, chat_id)];
                 case 2:
                     validationResult = _b.sent();
-                    return [2 /*return*/, NextResponse.json({
-                            success: validationResult.valid,
-                            message: validationResult.message,
-                            chat_id: chat_id
-                        })];
+                    return [2 /*return*/, NextResponse.json(__assign({ success: true }, validationResult))];
                 case 3:
                     error_1 = _b.sent();
-                    console.error('텔레그램 채팅 ID 검증 오류:', error_1);
+                    console.error('텔레그램 채팅 ID 유효성 검사 중 오류 발생:', error_1);
+                    status_1 = 500;
+                    errorMessage = '텔레그램 채팅 ID 유효성 검사 중 오류가 발생했습니다.';
                     if (error_1 instanceof ApiError) {
-                        return [2 /*return*/, NextResponse.json({ success: false, message: error_1.message }, { status: error_1.statusCode })];
+                        status_1 = error_1.status;
+                        errorMessage = error_1.message;
                     }
                     return [2 /*return*/, NextResponse.json({
                             success: false,
-                            message: '채팅 ID 검증 중 오류가 발생했습니다.',
-                            error: error_1 instanceof Error ? error_1.message : '알 수 없는 오류'
-                        }, { status: 500 })];
+                            message: errorMessage
+                        }, { status: status_1 })];
                 case 4: return [2 /*return*/];
             }
         });

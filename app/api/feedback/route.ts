@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '../../lib/supabaseClient';
-import logger from '../../lib/logger';
-import { sendTelegramMessage } from '../../lib/telegram';
+import { createClient } from '@/lib/supabaseClient';
+import logger from '@/lib/logger';
+import { sendTelegramMessage } from '@/lib/telegram';
 
 interface FeedbackData {
   rating: number;

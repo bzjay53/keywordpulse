@@ -1,186 +1,226 @@
-/**
- * 웹 성능 및 사용자 분석 모듈
- * 웹 바이탈 및 사용자 행동을 측정하고 분석 서비스에 전송하는 유틸리티 함수들 제공
- */
-
-import { onCLS, onFID, onLCP, onTTFB, onFCP, Metric } from 'web-vitals';
 import logger from './logger';
+import { createClient } from './supabaseClient';
 
-// 성능 메트릭 타입
-export type PerformanceMetric = {
-  name: string;
-  value: number;
-  id: string;
-  delta: number;
-  page: string;
-  timestamp: number;
-};
-
-/**
- * 웹 바이탈 측정 및 보고 함수
- * Next.js의 reportWebVitals과 함께 사용가능
- */
-export function reportWebVitals(): void {
-  try {
-    onCLS(sendToAnalytics);
-    onFID(sendToAnalytics);
-    onLCP(sendToAnalytics);
-    onTTFB(sendToAnalytics);
-    onFCP(sendToAnalytics);
-  } catch (error) {
-    logger.error({
-      message: '웹 바이탈 설정 오류',
-      error: error as Error,
-      tags: { module: 'analytics' }
-    });
-  }
-}
-
-/**
- * 측정된 성능 데이터를 분석 서비스에 전송
- * @param metric 웹 바이탈 측정 데이터
- */
-function sendToAnalytics(metric: Metric): void {
-  // 개발 환경에서는 콘솔에 출력 (선택적)
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`Web Vital: ${metric.name} = ${metric.value}`);
-  }
-
-  try {
-    const body: PerformanceMetric = {
-      name: metric.name,
-      value: metric.value,
-      id: metric.id,
-      delta: metric.delta,
-      page: window.location.pathname,
-      timestamp: Date.now()
-    };
-
-    // 메트릭 데이터를 서버로 전송
-    // 에지 함수 사용으로 대기하지 않음 (fire and forget)
-    fetch('/api/metrics', {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-      // 중요: 에러가 발생해도 사용자 경험에 영향을 주지 않도록 처리
-      keepalive: true,
-      mode: 'no-cors'
-    }).catch((error) => {
-      // 네트워크 오류는 조용히 처리 (UX에 영향 주지 않음)
-      console.error('Failed to send metrics:', error);
-    });
-
-    // Vercel Analytics가 설정된 경우 해당 서비스로도 전송
-    if (typeof (window as any).va === 'function') {
-      (window as any).va('event', {
-        name: `web-vital-${metric.name.toLowerCase()}`,
-        value: Math.round(metric.value),
-        page: window.location.pathname
-      });
-    }
-  } catch (error) {
-    logger.error({
-      message: '성능 메트릭 전송 오류',
-      error: error as Error,
-      tags: { module: 'analytics', action: 'sendToAnalytics' }
-    });
-  }
-}
-
-/**
- * 사용자 이벤트 추적 타입
- */
+// 사용자 행동 이벤트 유형
 export enum EventType {
   PAGE_VIEW = 'page_view',
+  FEATURE_USAGE = 'feature_usage',
+  BUTTON_CLICK = 'button_click',
+  FORM_SUBMIT = 'form_submit',
   SEARCH = 'search',
-  ANALYZE = 'analyze',
-  AUTH = 'auth',
-  CONTENT = 'content',
-  CONVERSION = 'conversion'
+  ERROR = 'error',
+  TIMING = 'timing',
+  FEEDBACK = 'feedback'
 }
 
-/**
- * 사용자 이벤트 추적 함수
- * @param type 이벤트 유형
- * @param action 이벤트 액션
- * @param properties 추가 속성
- */
-export function trackEvent(
-  type: EventType,
-  action: string,
-  properties: Record<string, any> = {}
-): void {
+// 이벤트 세부 정보 인터페이스
+export interface EventData {
+  eventType: EventType;
+  category?: string;
+  action?: string;
+  label?: string;
+  value?: number;
+  path?: string;
+  referrer?: string;
+  duration?: number;
+  metadata?: Record<string, any>;
+  userId?: string;
+  sessionId?: string;
+  timestamp?: string;
+}
+
+// 세션 식별자 생성
+const generateSessionId = (): string => {
+  const timestamp = new Date().getTime().toString(36);
+  const randomStr = Math.random().toString(36).substring(2, 10);
+  return `${timestamp}-${randomStr}`;
+};
+
+// 현재 세션 ID 관리
+let currentSessionId = '';
+
+// 세션 ID 획득
+const getSessionId = (): string => {
+  if (!currentSessionId) {
+    // 브라우저 환경에서는 sessionStorage에서 ID 가져오기 시도
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      currentSessionId = window.sessionStorage.getItem('kp_session_id') || '';
+      
+      if (!currentSessionId) {
+        currentSessionId = generateSessionId();
+        window.sessionStorage.setItem('kp_session_id', currentSessionId);
+      }
+    } else {
+      // 브라우저 환경이 아닌 경우 새 세션 ID 생성
+      currentSessionId = generateSessionId();
+    }
+  }
+  
+  return currentSessionId;
+};
+
+// 이벤트 로깅
+export async function logEvent(data: EventData): Promise<void> {
   try {
-    // Google Analytics 전송 (설정된 경우)
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', action, {
-        event_category: type,
-        ...properties
-      });
+    // 세션 ID 및 타임스탬프 추가
+    const enrichedData = {
+      ...data,
+      sessionId: data.sessionId || getSessionId(),
+      timestamp: data.timestamp || new Date().toISOString(),
+      path: data.path || (typeof window !== 'undefined' ? window.location.pathname : undefined),
+      referrer: data.referrer || (typeof window !== 'undefined' ? document.referrer : undefined)
+    };
+    
+    // 로그 출력 (개발 환경에서만)
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('사용자 행동 이벤트', enrichedData);
     }
-
-    // Vercel Analytics 전송 (설정된 경우)
-    if (typeof (window as any).va === 'function') {
-      (window as any).va('event', {
-        name: action,
-        category: type,
-        ...properties
-      });
+    
+    // Supabase에 이벤트 저장
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('user_events')
+      .insert([enrichedData]);
+    
+    if (error) {
+      logger.warn('이벤트 저장 중 오류 발생', { error, data: enrichedData });
     }
-
-    // 자체 분석 서버로 전송
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type,
-        action,
-        properties,
-        path: window.location.pathname,
-        timestamp: new Date().toISOString()
-      }),
-      keepalive: true
-    }).catch((err) => {
-      console.error('Event tracking failed:', err);
-    });
   } catch (error) {
-    logger.error({
-      message: '이벤트 추적 오류',
-      error: error as Error,
-      context: { type, action, properties },
-      tags: { module: 'analytics', action: 'trackEvent' }
-    });
+    logger.error('이벤트 로깅 중 오류 발생', { error, data });
   }
 }
 
-/**
- * 페이지 조회 이벤트 추적 함수
- * @param path 페이지 경로
- * @param title 페이지 제목
- */
-export function trackPageView(path: string = '', title: string = ''): void {
-  try {
-    const currentPath = path || (typeof window !== 'undefined' ? window.location.pathname : '');
-    const pageTitle = title || (typeof document !== 'undefined' ? document.title : '');
-
-    trackEvent(EventType.PAGE_VIEW, 'page_view', {
-      path: currentPath,
-      title: pageTitle,
-      referrer: typeof document !== 'undefined' ? document.referrer : ''
-    });
-  } catch (error) {
-    logger.error({
-      message: '페이지 뷰 추적 오류',
-      error: error as Error,
-      context: { path, title },
-      tags: { module: 'analytics', action: 'trackPageView' }
-    });
-  }
+// 편의 함수: 페이지 조회 이벤트
+export function logPageView(path?: string, referrer?: string, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.PAGE_VIEW,
+    path,
+    referrer,
+    metadata
+  });
 }
 
+// 편의 함수: 버튼 클릭 이벤트
+export function logButtonClick(buttonId: string, category?: string, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.BUTTON_CLICK,
+    action: buttonId,
+    category,
+    metadata
+  });
+}
+
+// 편의 함수: 기능 사용 이벤트
+export function logFeatureUsage(featureName: string, action?: string, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.FEATURE_USAGE,
+    category: featureName,
+    action,
+    metadata
+  });
+}
+
+// 편의 함수: 검색 이벤트
+export function logSearch(searchTerm: string, resultCount?: number, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.SEARCH,
+    action: 'search',
+    label: searchTerm,
+    value: resultCount,
+    metadata
+  });
+}
+
+// 편의 함수: 에러 이벤트
+export function logError(errorMessage: string, errorCode?: string, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.ERROR,
+    action: errorCode || 'error',
+    label: errorMessage,
+    metadata
+  });
+}
+
+// 편의 함수: 타이밍 이벤트
+export function logTiming(category: string, variable: string, duration: number, metadata?: Record<string, any>): void {
+  logEvent({
+    eventType: EventType.TIMING,
+    category,
+    action: variable,
+    duration,
+    metadata
+  });
+}
+
+// 타이밍 측정 도우미
+export function measureTiming(category: string, variable: string, callback: () => Promise<any>, metadata?: Record<string, any>): Promise<any> {
+  const startTime = performance.now();
+  
+  return callback().finally(() => {
+    const duration = performance.now() - startTime;
+    logTiming(category, variable, duration, metadata);
+  });
+}
+
+// 전체 화면 머무른 시간 측정 (비동기)
+export function trackTimeOnPage(): () => void {
+  const startTime = performance.now();
+  let intervalId: NodeJS.Timeout | null = null;
+  let isTracking = true;
+  
+  // 주기적으로 체류 시간 기록 (5분 간격)
+  intervalId = setInterval(() => {
+    if (isTracking) {
+      const currentDuration = (performance.now() - startTime) / 1000; // 초 단위
+      logTiming('page', 'time_on_page', currentDuration, {
+        path: window.location.pathname
+      });
+    }
+  }, 5 * 60 * 1000); // 5분
+  
+  // 페이지 언로드 시 최종 시간 기록
+  const recordFinalTime = () => {
+    if (isTracking) {
+      isTracking = false;
+      if (intervalId) clearInterval(intervalId);
+      
+      const totalDuration = (performance.now() - startTime) / 1000; // 초 단위
+      logTiming('page', 'total_time_on_page', totalDuration, {
+        path: window.location.pathname
+      });
+    }
+  };
+  
+  // 브라우저 환경인 경우 이벤트 리스너 등록
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', recordFinalTime);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        recordFinalTime();
+      }
+    });
+  }
+  
+  // 정리 함수 반환
+  return () => {
+    isTracking = false;
+    if (intervalId) clearInterval(intervalId);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', recordFinalTime);
+    }
+  };
+}
+
+// 기본 내보내기
 export default {
-  reportWebVitals,
-  trackEvent,
-  trackPageView,
+  logEvent,
+  logPageView,
+  logButtonClick,
+  logFeatureUsage,
+  logSearch,
+  logError,
+  logTiming,
+  measureTiming,
+  trackTimeOnPage,
   EventType
 }; 

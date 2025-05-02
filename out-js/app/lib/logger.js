@@ -1,116 +1,173 @@
 /**
- * 로깅 시스템
- *
- * 정적 빌드와 호환되는 간단한 로깅 유틸리티
- * 환경에 따라 콘솔 또는 Sentry로 로그를 전송합니다.
+ * 애플리케이션 로깅 시스템
  */
-// 환경에 따라 Sentry를 조건부로 가져오기
-var Sentry = null;
-if (typeof window !== 'undefined') {
-    try {
-        // 클라이언트 사이드에서만 Sentry 로드 시도
-        Sentry = require('@sentry/nextjs');
-    }
-    catch (e) {
-        console.warn('Sentry 로드 실패:', e);
+var isSentryInitialized = false;
+// 프로덕션 환경에서 Sentry 초기화
+function initSentry() {
+    // Sentry 통합 여부 확인 (환경 변수 또는 전역 변수로 제어 가능)
+    var enableSentry = typeof window !== 'undefined' &&
+        (window === null || window === void 0 ? void 0 : window.__ENABLE_SENTRY__) ||
+        process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true';
+    if (enableSentry && !isSentryInitialized) {
+        try {
+            // Note: 여기서는 실제 Sentry 초기화를 하지 않습니다.
+            // 실제 구현에서는 Sentry를 초기화하는 코드가 들어갑니다.
+            isSentryInitialized = true;
+        }
+        catch (error) {
+            console.error('Sentry 초기화 실패:', error);
+        }
     }
 }
 /**
- * 애플리케이션 로깅 유틸리티
- * Sentry 및 콘솔 로깅을 처리합니다.
+ * 로그 메시지를 기록합니다.
+ * @param params 로그 매개변수
  */
-export var logger = {
-    /**
-     * 일반 정보 로깅
-     */
-    log: function (_a) {
-        var message = _a.message, _b = _a.level, level = _b === void 0 ? 'info' : _b, context = _a.context, user = _a.user, tags = _a.tags;
-        // 콘솔 로깅
-        console[level](message, context);
-        // Sentry로 이벤트 전송 (info 레벨 이상, Sentry가 로드된 경우에만)
-        if (level !== 'debug' && Sentry) {
-            var sentryLevel_1 = level === 'warn' ? 'warning' : level;
-            try {
-                Sentry.withScope(function (scope) {
-                    if (context)
-                        scope.setExtras(context);
-                    if (user)
-                        scope.setUser(user);
-                    if (tags)
-                        Object.entries(tags).forEach(function (_a) {
-                            var key = _a[0], value = _a[1];
-                            return scope.setTag(key, value);
-                        });
-                    Sentry.captureMessage(message, sentryLevel_1);
-                });
-            }
-            catch (e) {
-                console.error('Sentry 이벤트 캡처 실패:', e);
-            }
-        }
-    },
-    /**
-     * 에러 로깅
-     */
-    error: function (_a) {
-        var message = _a.message, error = _a.error, context = _a.context, user = _a.user, tags = _a.tags;
-        // 콘솔 에러 로깅
-        console.error(message, error, context);
-        // Sentry로 예외 전송 (Sentry가 로드된 경우에만)
-        if (Sentry) {
-            try {
-                Sentry.withScope(function (scope) {
-                    if (context)
-                        scope.setExtras(context);
-                    if (user)
-                        scope.setUser(user);
-                    if (tags)
-                        Object.entries(tags).forEach(function (_a) {
-                            var key = _a[0], value = _a[1];
-                            return scope.setTag(key, value);
-                        });
-                    if (error) {
-                        Sentry.captureException(error);
-                    }
-                    else {
-                        Sentry.captureMessage(message, 'error');
-                    }
-                });
-            }
-            catch (e) {
-                console.error('Sentry 에러 캡처 실패:', e);
-            }
-        }
-    },
-    /**
-     * 성능 모니터링 트랜잭션 시작
-     */
-    startTransaction: function (name, op) {
-        if (Sentry) {
-            try {
-                return Sentry.startTransaction({
-                    name: name,
-                    op: op,
-                });
-            }
-            catch (e) {
-                console.error('Sentry 트랜잭션 시작 실패:', e);
-            }
-        }
-        return undefined;
-    },
-    /**
-     * 사용자 정보 설정
-     */
-    setUser: function (user) {
-        if (Sentry) {
-            try {
-                Sentry.setUser(user);
-            }
-            catch (e) {
-                console.error('Sentry 사용자 설정 실패:', e);
-            }
-        }
+function log(params) {
+    var message = params.message, _a = params.level, level = _a === void 0 ? 'info' : _a, context = params.context, user = params.user, tags = params.tags;
+    // 개발 환경에서는 콘솔에 출력
+    if (process.env.NODE_ENV === 'development') {
+        var logMethod = level === 'error' ? console.error :
+            level === 'warn' ? console.warn :
+                level === 'debug' ? console.debug :
+                    console.log;
+        logMethod("[".concat(level.toUpperCase(), "] ").concat(message), {
+            context: context,
+            user: user,
+            tags: tags,
+            timestamp: new Date().toISOString()
+        });
     }
+    // 프로덕션 환경에서는 Sentry 또는 다른 로깅 서비스로 전송 가능
+    if (process.env.NODE_ENV === 'production') {
+        // Sentry 초기화
+        initSentry();
+        // 여기에 프로덕션 로깅 로직을 구현
+        // 예: Sentry 이벤트 전송, 서버 로그 API 호출 등
+    }
+}
+/**
+ * 정보 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function info(message, context) {
+    log({
+        message: message,
+        level: 'info',
+        context: context
+    });
+}
+/**
+ * 경고 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function warn(message, context) {
+    log({
+        message: message,
+        level: 'warn',
+        context: context
+    });
+}
+/**
+ * 디버그 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function debug(message, context) {
+    log({
+        message: message,
+        level: 'debug',
+        context: context
+    });
+}
+/**
+ * 오류를 기록합니다.
+ * @param params 오류 로그 매개변수
+ */
+function error(params) {
+    var message = params.message, err = params.error, context = params.context, user = params.user, tags = params.tags;
+    // 개발 환경에서는 콘솔에 출력
+    if (process.env.NODE_ENV === 'development') {
+        console.error("[ERROR] ".concat(message), {
+            error: err,
+            stack: err === null || err === void 0 ? void 0 : err.stack,
+            context: context,
+            user: user,
+            tags: tags,
+            timestamp: new Date().toISOString()
+        });
+    }
+    // 프로덕션 환경에서는 Sentry로 전송
+    if (process.env.NODE_ENV === 'production') {
+        // Sentry 초기화
+        initSentry();
+        // 여기에 프로덕션 오류 로깅 로직을 구현
+        // 예: Sentry captureException 호출
+    }
+}
+/**
+ * 성능 측정을 위한 트랜잭션을 시작합니다.
+ * @param name 트랜잭션 이름
+ * @param op 작업 타입
+ * @returns 트랜잭션 객체
+ */
+function startTransaction(name, op) {
+    // 개발 환경에서는 콘솔에 출력
+    if (process.env.NODE_ENV === 'development') {
+        console.log("[TRANSACTION] \uC2DC\uC791: ".concat(name, " (").concat(op, ")"));
+        // 간단한 트랜잭션 객체 반환
+        return {
+            finish: function () {
+                console.log("[TRANSACTION] \uC885\uB8CC: ".concat(name, " (").concat(op, ")"));
+            },
+            setTag: function (key, value) {
+                console.log("[TRANSACTION] \uD0DC\uADF8 \uC124\uC815: ".concat(key, "=").concat(value));
+            }
+        };
+    }
+    // 프로덕션 환경에서는 Sentry 트랜잭션 반환
+    if (process.env.NODE_ENV === 'production') {
+        // Sentry 초기화
+        initSentry();
+        // 간단한 더미 객체 반환 (실제 구현에서는 Sentry 트랜잭션 반환)
+        return {
+            finish: function () { },
+            setTag: function (key, value) { }
+        };
+    }
+    // 기본 더미 객체 반환
+    return {
+        finish: function () { },
+        setTag: function (key, value) { }
+    };
+}
+/**
+ * 사용자 정보를 설정합니다.
+ * @param user 사용자 정보
+ */
+function setUser(user) {
+    // 개발 환경에서는 콘솔에 출력
+    if (process.env.NODE_ENV === 'development') {
+        console.log("[USER] \uC0AC\uC6A9\uC790 \uC124\uC815:", user);
+    }
+    // 프로덕션 환경에서는 Sentry 사용자 설정
+    if (process.env.NODE_ENV === 'production') {
+        // Sentry 초기화
+        initSentry();
+        // 여기에 프로덕션 사용자 설정 로직을 구현
+        // 예: Sentry setUser 호출
+    }
+}
+// 로거 객체 내보내기
+var logger = {
+    log: log,
+    info: info,
+    warn: warn,
+    debug: debug,
+    error: error,
+    startTransaction: startTransaction,
+    setUser: setUser
 };
 export default logger;

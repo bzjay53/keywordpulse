@@ -8,6 +8,18 @@ import ragEngine, { RagDocument, RagSearchResult, SupportedLanguage } from './ra
 import { sendTelegramMessage } from './telegram';
 
 /**
+ * 키워드 데이터 인터페이스
+ */
+export interface KeywordData {
+  keyword: string;
+  score: number;
+  monthlySearches?: number;
+  competitionRate?: number;
+  trend?: string;
+  relatedKeywords?: string[];
+}
+
+/**
  * RAG 통합 옵션
  */
 export interface RagIntegrationOptions {

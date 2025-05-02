@@ -3,8 +3,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import logger from '../../lib/logger';
-import type { PerformanceMetric } from '../../lib/analytics';
+import logger from '@/lib/logger';
+
+// 성능 메트릭 타입 정의
+interface PerformanceMetric {
+  name: string;
+  value: number;
+  page: string;
+  timestamp?: number;
+}
 
 // Edge 런타임 설정 (정적 내보내기 호환)
 export const runtime = 'edge';

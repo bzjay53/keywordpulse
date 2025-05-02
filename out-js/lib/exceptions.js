@@ -87,6 +87,21 @@ var TelegramChatIdException = /** @class */ (function (_super) {
 }(TelegramException));
 export { TelegramChatIdException };
 /**
+ * API 요청 중 발생한 오류를 표현하는 사용자 정의 오류 클래스입니다.
+ */
+var ApiError = /** @class */ (function (_super) {
+    __extends(ApiError, _super);
+    function ApiError(message, status) {
+        if (status === void 0) { status = 500; }
+        var _this = _super.call(this, message) || this;
+        _this.name = 'ApiError';
+        _this.status = status;
+        return _this;
+    }
+    return ApiError;
+}(Error));
+export { ApiError };
+/**
  * 예외를 사용자 친화적인 메시지로 변환합니다.
  * @param exception 예외 객체
  * @returns 사용자 친화적인 오류 메시지
@@ -96,7 +111,7 @@ export function formatTelegramError(exception) {
         return '텔레그램 봇 설정 오류가 발생했습니다. 관리자에게 문의하세요.';
     }
     else if (exception instanceof TelegramSendException) {
-        return '메시지 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+        return '메시지 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
     else if (exception instanceof TelegramRateLimitException) {
         var waitTime = exception.retryAfter ? "".concat(exception.retryAfter, "\uCD08 \uD6C4") : '잠시 후';
@@ -107,6 +122,9 @@ export function formatTelegramError(exception) {
     }
     else if (exception instanceof TelegramException) {
         return '텔레그램 알림 서비스에 오류가 발생했습니다.';
+    }
+    else if (exception instanceof ApiError) {
+        return "API \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4: ".concat(exception.message);
     }
     else if (exception instanceof Error) {
         return "\uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4: ".concat(exception.message);

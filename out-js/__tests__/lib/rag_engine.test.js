@@ -4,7 +4,7 @@
  */
 import { categorizeKeyword, generateKeywordAnalysis } from '@/lib/rag_engine';
 // logger 모듈 모킹
-jest.mock('@/app/lib/logger', function () { return ({
+jest.mock('@/lib/logger', function () { return ({
     log: jest.fn(),
     error: jest.fn(),
 }); });

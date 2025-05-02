@@ -1,121 +1,205 @@
 /**
- * 로깅 시스템
- * 
- * 정적 빌드와 호환되는 간단한 로깅 유틸리티
- * 환경에 따라 콘솔 또는 Sentry로 로그를 전송합니다.
+ * 애플리케이션 로깅 시스템
  */
 
-// 환경에 따라 Sentry를 조건부로 가져오기
-let Sentry: any = null;
-if (typeof window !== 'undefined') {
-  try {
-    // 클라이언트 사이드에서만 Sentry 로드 시도
-    Sentry = require('@sentry/nextjs');
-  } catch (e) {
-    console.warn('Sentry 로드 실패:', e);
-  }
+export interface LogParams {
+  message: string;
+  level?: 'info' | 'warn' | 'error' | 'debug';
+  context?: Record<string, any>;
+  user?: { id?: string; email?: string };
+  tags?: Record<string, string>;
 }
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+let isSentryInitialized = false;
 
-interface LogParams {
-  message: string;
-  level?: LogLevel;
-  context?: Record<string, any>;
-  user?: {
-    id?: string;
-    email?: string;
-  };
-  tags?: Record<string, string>;
-  error?: Error;
+// 프로덕션 환경에서 Sentry 초기화
+function initSentry() {
+  // Sentry 통합 여부 확인 (환경 변수 또는 전역 변수로 제어 가능)
+  const enableSentry = typeof window !== 'undefined' && 
+                      (window as any)?.__ENABLE_SENTRY__ || 
+                      process.env.NEXT_PUBLIC_ENABLE_SENTRY === 'true';
+  
+  if (enableSentry && !isSentryInitialized) {
+    try {
+      // Note: 여기서는 실제 Sentry 초기화를 하지 않습니다.
+      // 실제 구현에서는 Sentry를 초기화하는 코드가 들어갑니다.
+      isSentryInitialized = true;
+    } catch (error) {
+      console.error('Sentry 초기화 실패:', error);
+    }
+  }
 }
 
 /**
- * 애플리케이션 로깅 유틸리티
- * Sentry 및 콘솔 로깅을 처리합니다.
+ * 로그 메시지를 기록합니다.
+ * @param params 로그 매개변수
  */
-export const logger = {
-  /**
-   * 일반 정보 로깅
-   */
-  log({ message, level = 'info', context, user, tags }: LogParams): void {
-    // 콘솔 로깅
-    console[level](message, context);
+function log(params: LogParams): void {
+  const { message, level = 'info', context, user, tags } = params;
+  
+  // 개발 환경에서는 콘솔에 출력
+  if (process.env.NODE_ENV === 'development') {
+    const logMethod = level === 'error' ? console.error : 
+                     level === 'warn' ? console.warn : 
+                     level === 'debug' ? console.debug : 
+                     console.log;
     
-    // Sentry로 이벤트 전송 (info 레벨 이상, Sentry가 로드된 경우에만)
-    if (level !== 'debug' && Sentry) {
-      const sentryLevel = level === 'warn' ? 'warning' : level;
-      
-      try {
-        Sentry.withScope((scope: any) => {
-          if (context) scope.setExtras(context);
-          if (user) scope.setUser(user);
-          if (tags) Object.entries(tags).forEach(([key, value]) => scope.setTag(key, value));
-          
-          Sentry.captureMessage(message, sentryLevel);
-        });
-      } catch (e) {
-        console.error('Sentry 이벤트 캡처 실패:', e);
-      }
-    }
-  },
-  
-  /**
-   * 에러 로깅
-   */
-  error({ message, error, context, user, tags }: LogParams): void {
-    // 콘솔 에러 로깅
-    console.error(message, error, context);
-    
-    // Sentry로 예외 전송 (Sentry가 로드된 경우에만)
-    if (Sentry) {
-      try {
-        Sentry.withScope((scope: any) => {
-          if (context) scope.setExtras(context);
-          if (user) scope.setUser(user);
-          if (tags) Object.entries(tags).forEach(([key, value]) => scope.setTag(key, value));
-          
-          if (error) {
-            Sentry.captureException(error);
-          } else {
-            Sentry.captureMessage(message, 'error');
-          }
-        });
-      } catch (e) {
-        console.error('Sentry 에러 캡처 실패:', e);
-      }
-    }
-  },
-  
-  /**
-   * 성능 모니터링 트랜잭션 시작
-   */
-  startTransaction(name: string, op: string): any | undefined {
-    if (Sentry) {
-      try {
-        return Sentry.startTransaction({
-          name,
-          op,
-        });
-      } catch (e) {
-        console.error('Sentry 트랜잭션 시작 실패:', e);
-      }
-    }
-    return undefined;
-  },
-  
-  /**
-   * 사용자 정보 설정
-   */
-  setUser(user: { id?: string; email?: string; }): void {
-    if (Sentry) {
-      try {
-        Sentry.setUser(user);
-      } catch (e) {
-        console.error('Sentry 사용자 설정 실패:', e);
-      }
-    }
+    logMethod(`[${level.toUpperCase()}] ${message}`, {
+      context,
+      user,
+      tags,
+      timestamp: new Date().toISOString()
+    });
   }
+  
+  // 프로덕션 환경에서는 Sentry 또는 다른 로깅 서비스로 전송 가능
+  if (process.env.NODE_ENV === 'production') {
+    // Sentry 초기화
+    initSentry();
+    
+    // 여기에 프로덕션 로깅 로직을 구현
+    // 예: Sentry 이벤트 전송, 서버 로그 API 호출 등
+  }
+}
+
+/**
+ * 정보 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function info(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'info',
+    context
+  });
+}
+
+/**
+ * 경고 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function warn(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'warn',
+    context
+  });
+}
+
+/**
+ * 디버그 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function debug(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'debug',
+    context
+  });
+}
+
+/**
+ * 오류를 기록합니다.
+ * @param params 오류 로그 매개변수
+ */
+function error(params: LogParams & { error?: Error }): void {
+  const { message, error: err, context, user, tags } = params;
+  
+  // 개발 환경에서는 콘솔에 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.error(`[ERROR] ${message}`, {
+      error: err,
+      stack: err?.stack,
+      context,
+      user,
+      tags,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  // 프로덕션 환경에서는 Sentry로 전송
+  if (process.env.NODE_ENV === 'production') {
+    // Sentry 초기화
+    initSentry();
+    
+    // 여기에 프로덕션 오류 로깅 로직을 구현
+    // 예: Sentry captureException 호출
+  }
+}
+
+/**
+ * 성능 측정을 위한 트랜잭션을 시작합니다.
+ * @param name 트랜잭션 이름
+ * @param op 작업 타입
+ * @returns 트랜잭션 객체
+ */
+function startTransaction(name: string, op: string): any {
+  // 개발 환경에서는 콘솔에 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[TRANSACTION] 시작: ${name} (${op})`);
+    
+    // 간단한 트랜잭션 객체 반환
+    return {
+      finish: () => {
+        console.log(`[TRANSACTION] 종료: ${name} (${op})`);
+      },
+      setTag: (key: string, value: string) => {
+        console.log(`[TRANSACTION] 태그 설정: ${key}=${value}`);
+      }
+    };
+  }
+  
+  // 프로덕션 환경에서는 Sentry 트랜잭션 반환
+  if (process.env.NODE_ENV === 'production') {
+    // Sentry 초기화
+    initSentry();
+    
+    // 간단한 더미 객체 반환 (실제 구현에서는 Sentry 트랜잭션 반환)
+    return {
+      finish: () => {},
+      setTag: (key: string, value: string) => {}
+    };
+  }
+  
+  // 기본 더미 객체 반환
+  return {
+    finish: () => {},
+    setTag: (key: string, value: string) => {}
+  };
+}
+
+/**
+ * 사용자 정보를 설정합니다.
+ * @param user 사용자 정보
+ */
+function setUser(user: { id?: string; email?: string }): void {
+  // 개발 환경에서는 콘솔에 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`[USER] 사용자 설정:`, user);
+  }
+  
+  // 프로덕션 환경에서는 Sentry 사용자 설정
+  if (process.env.NODE_ENV === 'production') {
+    // Sentry 초기화
+    initSentry();
+    
+    // 여기에 프로덕션 사용자 설정 로직을 구현
+    // 예: Sentry setUser 호출
+  }
+}
+
+// 로거 객체 내보내기
+const logger = {
+  log,
+  info,
+  warn,
+  debug,
+  error,
+  startTransaction,
+  setUser
 };
 
 export default logger; 

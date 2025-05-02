@@ -35,88 +35,67 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { NextResponse } from 'next/server';
-import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode, validateTelegramConfig } from '@/lib/telegram';
+import { sendTelegramMessage, formatErrorMessage, handleTelegramErrorCode } from '@/lib/telegram';
 import { ApiError } from '@/lib/exceptions';
 // 정적 내보내기와 호환되도록 force-dynamic 설정 제거
 // export const dynamic = 'force-dynamic';
 /**
- * 텔레그램 설정 테스트 API 엔드포인트
- * POST 요청으로 토큰, 채팅 ID를 받아 테스트 메시지를 전송합니다.
- * 선택적으로 커스텀 테스트 메시지를 받아 전송할 수 있습니다.
- *
- * @param request - 요청 객체
- * @returns NextResponse 객체
+ * 텔레그램 연결을 테스트하기 위한 API 엔드포인트
+ * POST: 봇 토큰과 채팅 ID를 검증하고 테스트 메시지를 전송합니다.
  */
 export function POST(request) {
     return __awaiter(this, void 0, void 0, function () {
-        var body, token, chat_id, message, testMessage, configValidation, result, error_1, status_1, errorMessage, errorCodeMatch, errorCode;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
+        var _a, token, chat_id, message, testMessage, result, error_1, status_1, errorMessage, telegramErrorCode, handledError;
+        var _b;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
                 case 0:
-                    _a.trys.push([0, 4, , 5]);
+                    _c.trys.push([0, 3, , 4]);
                     return [4 /*yield*/, request.json()];
                 case 1:
-                    body = _a.sent();
-                    token = body.token, chat_id = body.chat_id, message = body.message;
-                    // 필수 매개변수 검증
-                    if (!token) {
-                        throw new ApiError(400, '텔레그램 봇 토큰이 필요합니다.');
+                    _a = _c.sent(), token = _a.token, chat_id = _a.chat_id, message = _a.message;
+                    // 필수 파라미터 확인
+                    if (!token || !chat_id) {
+                        throw new ApiError(400, '텔레그램 봇 토큰과 채팅 ID가 필요합니다.');
                     }
-                    if (!chat_id) {
-                        throw new ApiError(400, '텔레그램 채팅 ID가 필요합니다.');
-                    }
-                    testMessage = message || "KeywordPulse에서 보낸 테스트 메시지입니다. 설정이 올바르게 작동합니다!";
-                    return [4 /*yield*/, validateTelegramConfig(token, chat_id)];
-                case 2:
-                    configValidation = _a.sent();
-                    if (!configValidation.valid) {
-                        throw new ApiError(400, configValidation.message);
-                    }
+                    testMessage = message ||
+                        "<b>KeywordPulse \uD154\uB808\uADF8\uB7A8 \uC5F0\uACB0 \uD14C\uC2A4\uD2B8</b>\n      \n\u2705 \uC131\uACF5\uC801\uC73C\uB85C \uC5F0\uACB0\uB418\uC5C8\uC2B5\uB2C8\uB2E4!\n\uD83D\uDD14 \uC774\uC81C \uD0A4\uC6CC\uB4DC \uBD84\uC11D \uACB0\uACFC\uB97C \uC774 \uCC44\uD305\uC73C\uB85C \uBC1B\uC744 \uC218 \uC788\uC2B5\uB2C8\uB2E4.\n      \n\u2728 <i>\uD604\uC7AC \uC2DC\uAC04: ".concat(new Date().toLocaleString('ko-KR'), "</i>");
                     return [4 /*yield*/, sendTelegramMessage(token, {
                             chat_id: chat_id,
                             text: testMessage,
-                            parse_mode: 'HTML',
-                            disable_web_page_preview: false
+                            parse_mode: 'HTML'
                         })];
-                case 3:
-                    result = _a.sent();
-                    console.log('텔레그램 테스트 메시지 전송 성공:', result);
+                case 2:
+                    result = _c.sent();
+                    // 성공 응답
                     return [2 /*return*/, NextResponse.json({
                             success: true,
                             message: '텔레그램 테스트 메시지가 성공적으로 전송되었습니다.',
                             data: result
                         })];
-                case 4:
-                    error_1 = _a.sent();
-                    console.error('텔레그램 테스트 메시지 전송 중 오류:', error_1);
+                case 3:
+                    error_1 = _c.sent();
+                    console.error('텔레그램 테스트 중 오류 발생:', error_1);
                     status_1 = 500;
-                    errorMessage = '텔레그램 테스트 메시지 전송 중 오류가 발생했습니다.';
-                    // API 에러인 경우
+                    errorMessage = '텔레그램 연결 테스트 중 오류가 발생했습니다.';
                     if (error_1 instanceof ApiError) {
-                        status_1 = error_1.statusCode;
+                        status_1 = error_1.status;
                         errorMessage = error_1.message;
                     }
-                    // 텔레그램 API 에러인 경우
-                    else if (error_1.message && error_1.message.includes('텔레그램 API 오류')) {
-                        status_1 = 400;
-                        errorCodeMatch = error_1.message.match(/\((\d+)\)$/);
-                        if (errorCodeMatch && errorCodeMatch[1]) {
-                            errorCode = parseInt(errorCodeMatch[1]);
-                            errorMessage = handleTelegramErrorCode(errorCode);
+                    else if (error_1.response) {
+                        telegramErrorCode = (_b = error_1.response.data) === null || _b === void 0 ? void 0 : _b.error_code;
+                        if (telegramErrorCode) {
+                            handledError = handleTelegramErrorCode(telegramErrorCode);
+                            errorMessage = handledError.message;
+                            status_1 = handledError.status;
                         }
-                        else {
-                            errorMessage = formatErrorMessage(error_1);
-                        }
-                    }
-                    else {
-                        errorMessage = formatErrorMessage(error_1);
                     }
                     return [2 /*return*/, NextResponse.json({
                             success: false,
                             message: errorMessage,
-                            error: process.env.NODE_ENV === 'development' ? error_1.toString() : undefined
+                            error: formatErrorMessage(error_1.message || '알 수 없는 오류')
                         }, { status: status_1 })];
-                case 5: return [2 /*return*/];
+                case 4: return [2 /*return*/];
             }
         });
     });

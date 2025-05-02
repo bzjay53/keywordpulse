@@ -47,6 +47,42 @@ function log(params) {
     }
 }
 /**
+ * 정보 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function info(message, context) {
+    log({
+        message: message,
+        level: 'info',
+        context: context
+    });
+}
+/**
+ * 경고 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function warn(message, context) {
+    log({
+        message: message,
+        level: 'warn',
+        context: context
+    });
+}
+/**
+ * 디버그 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function debug(message, context) {
+    log({
+        message: message,
+        level: 'debug',
+        context: context
+    });
+}
+/**
  * 오류를 기록합니다.
  * @param params 오류 로그 매개변수
  */
@@ -127,6 +163,9 @@ function setUser(user) {
 // 로거 객체 내보내기
 var logger = {
     log: log,
+    info: info,
+    warn: warn,
+    debug: debug,
     error: error,
     startTransaction: startTransaction,
     setUser: setUser

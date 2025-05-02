@@ -2,6 +2,17 @@
  * 트렌드 API 모듈
  * 키워드 트렌드, 관련 키워드, 인기 키워드 조회 기능을 제공합니다.
  */
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -40,43 +51,26 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 import logger from './logger';
 /**
- * 특정 키워드와 관련된 키워드 목록을 가져옵니다.
- * @param keyword 검색할 키워드
- * @param count 가져올 관련 키워드 수
- * @param geo 지역 코드
- * @returns 관련 키워드 배열
+ * 트렌드 타임프레임 옵션을 가져옵니다
+ * @returns 사용 가능한 타임프레임 목록
  */
-export function getRelatedKeywords(keyword_1) {
-    return __awaiter(this, arguments, void 0, function (keyword, count, geo) {
-        var dummyKeywords, baseKeywords, i;
-        if (count === void 0) { count = 10; }
-        if (geo === void 0) { geo = 'KR'; }
+export function getTimeframeOptions() {
+    return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             try {
-                // 실제 API 호출 대신 더미 데이터 생성
-                logger.log({
-                    message: '관련 키워드 검색',
-                    context: { keyword: keyword, count: count, geo: geo }
-                });
-                dummyKeywords = [];
-                baseKeywords = [
-                    '마케팅', '전략', '분석', '트렌드', '콘텐츠',
-                    '소셜미디어', 'SEO', '브랜딩', '광고', '성과'
-                ];
-                for (i = 0; i < Math.min(count, baseKeywords.length); i++) {
-                    dummyKeywords.push({
-                        keyword: "".concat(keyword, " ").concat(baseKeywords[i]),
-                        score: 100 - i * 10,
-                        volume: Math.floor(Math.random() * 1000) + 100
-                    });
-                }
-                return [2 /*return*/, dummyKeywords];
+                // 실제 구현에서는 데이터베이스에서 가져오거나 API에서 가져옵니다
+                return [2 /*return*/, [
+                        { id: 'day', name: '일간', days: 1 },
+                        { id: 'week', name: '주간', days: 7 },
+                        { id: 'month', name: '월간', days: 30 },
+                        { id: 'quarter', name: '분기', days: 90 },
+                        { id: 'year', name: '연간', days: 365 },
+                    ]];
             }
             catch (error) {
                 logger.error({
-                    message: '관련 키워드 검색 실패',
-                    error: error,
-                    context: { keyword: keyword, count: count, geo: geo }
+                    message: '타임프레임 옵션을 가져오는 중 오류 발생',
+                    error: error
                 });
                 return [2 /*return*/, []];
             }
@@ -85,71 +79,28 @@ export function getRelatedKeywords(keyword_1) {
     });
 }
 /**
- * 특정 키워드의 시간에 따른 검색 트렌드 데이터를 가져옵니다.
- * @param keyword 검색할 키워드
- * @param timeRange 시간 범위
- * @param geo 지역 코드
- * @returns 트렌드 데이터 배열
+ * 트렌드 카테고리 옵션을 가져옵니다
+ * @returns 사용 가능한 카테고리 목록
  */
-export function getKeywordTrend(keyword_1) {
-    return __awaiter(this, arguments, void 0, function (keyword, timeRange, geo) {
-        var dataPoints, trendData, now, i, date, baseValue, variance, value;
-        if (timeRange === void 0) { timeRange = 'month'; }
-        if (geo === void 0) { geo = 'KR'; }
+export function getCategoryOptions() {
+    return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             try {
-                // 실제 API 호출 대신 더미 데이터 생성
-                logger.log({
-                    message: '키워드 트렌드 검색',
-                    context: { keyword: keyword, timeRange: timeRange, geo: geo }
-                });
-                dataPoints = 0;
-                switch (timeRange) {
-                    case 'day':
-                        dataPoints = 24;
-                        break;
-                    case 'week':
-                        dataPoints = 7;
-                        break;
-                    case 'month':
-                        dataPoints = 30;
-                        break;
-                    case 'year':
-                        dataPoints = 12;
-                        break;
-                }
-                trendData = [];
-                now = new Date();
-                for (i = 0; i < dataPoints; i++) {
-                    date = new Date(now);
-                    // 기간에 따라 날짜 조정
-                    if (timeRange === 'day') {
-                        date.setHours(now.getHours() - i);
-                    }
-                    else if (timeRange === 'week') {
-                        date.setDate(now.getDate() - i);
-                    }
-                    else if (timeRange === 'month') {
-                        date.setDate(now.getDate() - i);
-                    }
-                    else if (timeRange === 'year') {
-                        date.setMonth(now.getMonth() - i);
-                    }
-                    baseValue = 75;
-                    variance = 25;
-                    value = Math.floor(baseValue + (Math.random() * variance * 2 - variance));
-                    trendData.push({
-                        date: date.toISOString().split('T')[0],
-                        value: value
-                    });
-                }
-                return [2 /*return*/, trendData.reverse()];
+                // 실제 구현에서는 데이터베이스에서 가져오거나 API에서 가져옵니다
+                return [2 /*return*/, [
+                        'all',
+                        'tech',
+                        'business',
+                        'health',
+                        'entertainment',
+                        'finance',
+                        'education',
+                    ]];
             }
             catch (error) {
                 logger.error({
-                    message: '키워드 트렌드 검색 실패',
-                    error: error,
-                    context: { keyword: keyword, timeRange: timeRange, geo: geo }
+                    message: '카테고리 옵션을 가져오는 중 오류 발생',
+                    error: error
                 });
                 return [2 /*return*/, []];
             }
@@ -158,49 +109,197 @@ export function getKeywordTrend(keyword_1) {
     });
 }
 /**
- * 현재 인기 있는 트렌딩 키워드 목록을 가져옵니다.
- * @param category 키워드 카테고리
- * @param count 가져올 키워드 수
- * @param geo 지역 코드
- * @returns 인기 키워드 배열
+ * 인기 트렌드 키워드를 가져옵니다
+ * @param options 트렌드 검색 옵션
+ * @returns 트렌드 키워드 목록과 메타데이터
  */
 export function getTrendingKeywords() {
-    return __awaiter(this, arguments, void 0, function (category, count, geo) {
-        var trendingKeywords;
-        if (category === void 0) { category = 'all'; }
-        if (count === void 0) { count = 10; }
-        if (geo === void 0) { geo = 'KR'; }
-        return __generator(this, function (_a) {
+    return __awaiter(this, arguments, void 0, function (options) {
+        var _a, limit, _b, offset, _c, category, _d, timeframe, _e, source, _f, includeHistory, keywords;
+        if (options === void 0) { options = {}; }
+        return __generator(this, function (_g) {
+            _a = options.limit, limit = _a === void 0 ? 10 : _a, _b = options.offset, offset = _b === void 0 ? 0 : _b, _c = options.category, category = _c === void 0 ? 'all' : _c, _d = options.timeframe, timeframe = _d === void 0 ? 'week' : _d, _e = options.source, source = _e === void 0 ? 'all' : _e, _f = options.includeHistory, includeHistory = _f === void 0 ? false : _f;
             try {
-                // 실제 API 호출 대신 더미 데이터 생성
                 logger.log({
-                    message: '트렌딩 키워드 검색',
-                    context: { category: category, count: count, geo: geo }
+                    message: '인기 트렌드 키워드 조회',
+                    level: 'info',
+                    context: { limit: limit, offset: offset, category: category, timeframe: timeframe, source: source }
                 });
-                trendingKeywords = {
-                    all: ['인공지능', '디지털 전환', '블록체인', '메타버스', '클라우드 컴퓨팅',
-                        '사이버 보안', '온라인 쇼핑', '재택근무', '전기차', '친환경'],
-                    business: ['스타트업', '투자', '디지털 마케팅', '비즈니스 모델', '원격 근무',
-                        'ESG 경영', '디지털 전환', '코로나 이후 경제', '글로벌 공급망', '인재 채용'],
-                    technology: ['인공지능', '머신러닝', '블록체인', '클라우드 컴퓨팅', '5G',
-                        '사물인터넷', '가상현실', '증강현실', '양자 컴퓨팅', '엣지 컴퓨팅'],
-                    entertainment: ['넷플릭스', '유튜브', '틱톡', '메타버스', '게임 스트리밍',
-                        'NFT', '디지털 콘텐츠', 'OTT 서비스', '온라인 콘서트', '소셜 미디어'],
-                    health: ['디지털 헬스케어', '원격 진료', '웨어러블 기기', '건강 앱', '멘탈 헬스',
-                        '면역력 강화', '홈 트레이닝', '건강식품', '수면 케어', '스트레스 관리']
-                };
-                // 해당 카테고리의 키워드 반환 (요청한 수만큼)
-                return [2 /*return*/, trendingKeywords[category].slice(0, count)];
+                keywords = [
+                    { keyword: '인공지능', count: 1200, change: 15, rank: 1, category: 'tech' },
+                    { keyword: '블록체인', count: 980, change: -5, rank: 2, category: 'tech' },
+                    { keyword: '메타버스', count: 850, change: 30, rank: 3, category: 'tech' },
+                    { keyword: '디지털 트랜스포메이션', count: 720, change: 12, rank: 4, category: 'business' },
+                    { keyword: '사이버 보안', count: 650, change: 8, rank: 5, category: 'tech' },
+                    { keyword: '원격 근무', count: 580, change: -2, rank: 6, category: 'business' },
+                    { keyword: '빅데이터', count: 520, change: 5, rank: 7, category: 'tech' },
+                    { keyword: '클라우드 컴퓨팅', count: 490, change: 10, rank: 8, category: 'tech' },
+                    { keyword: '디지털 마케팅', count: 460, change: 7, rank: 9, category: 'business' },
+                    { keyword: '사물인터넷', count: 430, change: -8, rank: 10, category: 'tech' },
+                ];
+                // 카테고리 필터링
+                if (category !== 'all') {
+                    keywords = keywords.filter(function (kw) { return kw.category === category; });
+                }
+                // 이력 데이터 추가 (요청된 경우)
+                if (includeHistory) {
+                    keywords = keywords.map(function (kw) { return (__assign(__assign({}, kw), { history: generateDummyHistory(timeframe) })); });
+                }
+                return [2 /*return*/, {
+                        keywords: keywords.slice(offset, offset + limit),
+                        total: keywords.length,
+                        timeframe: timeframe,
+                        category: category !== 'all' ? category : undefined,
+                        updated: new Date().toISOString()
+                    }];
             }
             catch (error) {
                 logger.error({
-                    message: '트렌딩 키워드 검색 실패',
+                    message: '트렌드 키워드를 가져오는 중 오류 발생',
                     error: error,
-                    context: { category: category, count: count, geo: geo }
+                    context: { options: options }
                 });
-                return [2 /*return*/, []];
+                throw new Error("\uD2B8\uB80C\uB4DC \uD0A4\uC6CC\uB4DC \uC870\uD68C \uC2E4\uD328: ".concat(error.message));
             }
             return [2 /*return*/];
         });
     });
 }
+/**
+ * 특정 키워드의 트렌드 상세 정보를 가져옵니다
+ * @param keyword 조회할 키워드
+ * @param timeframe 시간 범위
+ * @returns 키워드 트렌드 상세 정보
+ */
+export function getKeywordTrend(keyword_1) {
+    return __awaiter(this, arguments, void 0, function (keyword, timeframe) {
+        var dummyTrends;
+        if (timeframe === void 0) { timeframe = 'week'; }
+        return __generator(this, function (_a) {
+            try {
+                logger.log({
+                    message: "\uD0A4\uC6CC\uB4DC \uD2B8\uB80C\uB4DC \uC0C1\uC138 \uC870\uD68C: ".concat(keyword),
+                    level: 'info',
+                    context: { keyword: keyword, timeframe: timeframe }
+                });
+                dummyTrends = {
+                    '인공지능': {
+                        keyword: '인공지능',
+                        count: 1200,
+                        change: 15,
+                        rank: 1,
+                        category: 'tech',
+                        history: generateDummyHistory(timeframe)
+                    },
+                    '블록체인': {
+                        keyword: '블록체인',
+                        count: 980,
+                        change: -5,
+                        rank: 2,
+                        category: 'tech',
+                        history: generateDummyHistory(timeframe)
+                    },
+                };
+                // 키워드가 있으면 반환, 없으면 null 반환
+                return [2 /*return*/, dummyTrends[keyword] || null];
+            }
+            catch (error) {
+                logger.error({
+                    message: "\uD0A4\uC6CC\uB4DC \uD2B8\uB80C\uB4DC \uC0C1\uC138 \uC870\uD68C \uC911 \uC624\uB958: ".concat(keyword),
+                    error: error,
+                    context: { keyword: keyword, timeframe: timeframe }
+                });
+                throw new Error("\uD0A4\uC6CC\uB4DC \uD2B8\uB80C\uB4DC \uC0C1\uC138 \uC870\uD68C \uC2E4\uD328: ".concat(error.message));
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+/**
+ * 관련 키워드를 검색합니다
+ * @param keyword 검색 키워드
+ * @param limit 결과 제한 수
+ * @returns 관련 키워드 목록
+ */
+export function getRelatedKeywords(keyword_1) {
+    return __awaiter(this, arguments, void 0, function (keyword, limit) {
+        var relatedKeywords;
+        if (limit === void 0) { limit = 10; }
+        return __generator(this, function (_a) {
+            try {
+                logger.log({
+                    message: "\uAD00\uB828 \uD0A4\uC6CC\uB4DC \uAC80\uC0C9: ".concat(keyword),
+                    level: 'info',
+                    context: { keyword: keyword, limit: limit }
+                });
+                relatedKeywords = [
+                    { keyword: "".concat(keyword, " \uCD94\uCC9C"), count: 580, change: 12 },
+                    { keyword: "".concat(keyword, " \uC0AC\uC6A9\uBC95"), count: 450, change: 8 },
+                    { keyword: "".concat(keyword, " \uD504\uB85C\uADF8\uB7A8"), count: 370, change: -3 },
+                    { keyword: "".concat(keyword, " \uBB34\uB8CC"), count: 320, change: 5 },
+                    { keyword: "".concat(keyword, " \uCD5C\uC2E0"), count: 290, change: 15 },
+                    { keyword: "".concat(keyword, " \uAC00\uACA9"), count: 250, change: 7 },
+                    { keyword: "".concat(keyword, " \uC124\uCE58"), count: 230, change: -2 },
+                    { keyword: "".concat(keyword, " \uBE44\uAD50"), count: 210, change: 4 },
+                    { keyword: "".concat(keyword, " \uD6C4\uAE30"), count: 190, change: 10 },
+                    { keyword: "".concat(keyword, " \uB300\uC548"), count: 170, change: 6 },
+                ];
+                return [2 /*return*/, relatedKeywords.slice(0, limit)];
+            }
+            catch (error) {
+                logger.error({
+                    message: "\uAD00\uB828 \uD0A4\uC6CC\uB4DC \uAC80\uC0C9 \uC911 \uC624\uB958: ".concat(keyword),
+                    error: error,
+                    context: { keyword: keyword, limit: limit }
+                });
+                throw new Error("\uAD00\uB828 \uD0A4\uC6CC\uB4DC \uAC80\uC0C9 \uC2E4\uD328: ".concat(error.message));
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+/**
+ * 특정 시간 범위에 대한 더미 이력 데이터를 생성합니다
+ * @param timeframe 시간 범위
+ * @returns 이력 데이터 포인트 배열
+ */
+function generateDummyHistory(timeframe) {
+    var days = 7; // 기본값은 주간
+    // 시간 범위에 따라 일수 결정
+    switch (timeframe) {
+        case 'day':
+            days = 1;
+            break;
+        case 'week':
+            days = 7;
+            break;
+        case 'month':
+            days = 30;
+            break;
+        case 'quarter':
+            days = 90;
+            break;
+        case 'year':
+            days = 365;
+            break;
+    }
+    // 더미 이력 데이터 생성
+    var history = [];
+    var today = new Date();
+    for (var i = days - 1; i >= 0; i--) {
+        var date = new Date(today);
+        date.setDate(today.getDate() - i);
+        history.push({
+            date: date.toISOString().split('T')[0], // YYYY-MM-DD 형식
+            value: Math.floor(Math.random() * 1000) + 100 // 100~1100 사이의 랜덤값
+        });
+    }
+    return history;
+}
+export default {
+    getTrendingKeywords: getTrendingKeywords,
+    getKeywordTrend: getKeywordTrend,
+    getRelatedKeywords: getRelatedKeywords,
+    getTimeframeOptions: getTimeframeOptions,
+    getCategoryOptions: getCategoryOptions
+};

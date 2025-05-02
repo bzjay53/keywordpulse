@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import useClipboard from './hooks/useClipboard';
+import useClipboard from '../hooks/useClipboard';
 import AnalysisRenderer from './AnalysisRenderer';
 
 interface AnalysisCardProps {
@@ -9,16 +9,11 @@ interface AnalysisCardProps {
 }
 
 const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysisText }) => {
-  const { isCopied, copyToClipboard } = useClipboard();
+  const { isCopied, copy } = useClipboard();
   
   // 복사 버튼 핸들러
-  const handleCopy = async () => {
-    const success = await copyToClipboard(analysisText);
-    if (success) {
-      // React Toastify 등 알림 라이브러리가 있다면 사용하는 것이 좋습니다
-      // 현재는 간단한 alert로 대체
-      alert('분석 텍스트가 클립보드에 복사되었습니다.');
-    }
+  const handleCopy = () => {
+    copy(analysisText);
   };
 
   if (!analysisText) {

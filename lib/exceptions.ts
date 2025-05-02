@@ -59,6 +59,19 @@ export class TelegramChatIdException extends TelegramException {
 }
 
 /**
+ * API 요청 중 발생한 오류를 표현하는 사용자 정의 오류 클래스입니다.
+ */
+export class ApiError extends Error {
+  status: number;
+  
+  constructor(message: string, status = 500) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
+/**
  * 예외를 사용자 친화적인 메시지로 변환합니다.
  * @param exception 예외 객체
  * @returns 사용자 친화적인 오류 메시지
@@ -67,7 +80,7 @@ export function formatTelegramError(exception: unknown): string {
   if (exception instanceof TelegramTokenException) {
     return '텔레그램 봇 설정 오류가 발생했습니다. 관리자에게 문의하세요.';
   } else if (exception instanceof TelegramSendException) {
-    return '메시지 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.';
+    return '메시지 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
   } else if (exception instanceof TelegramRateLimitException) {
     const waitTime = exception.retryAfter ? `${exception.retryAfter}초 후` : '잠시 후';
     return `너무 많은 요청이 있었습니다. ${waitTime} 다시 시도해 주세요.`;
@@ -75,6 +88,8 @@ export function formatTelegramError(exception: unknown): string {
     return '알림을 받을 대상이 올바르게 설정되지 않았습니다. 관리자에게 문의하세요.';
   } else if (exception instanceof TelegramException) {
     return '텔레그램 알림 서비스에 오류가 발생했습니다.';
+  } else if (exception instanceof ApiError) {
+    return `API 오류가 발생했습니다: ${exception.message}`;
   } else if (exception instanceof Error) {
     return `오류가 발생했습니다: ${exception.message}`;
   } else {

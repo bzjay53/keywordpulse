@@ -63,6 +63,45 @@ function log(params: LogParams): void {
 }
 
 /**
+ * 정보 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function info(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'info',
+    context
+  });
+}
+
+/**
+ * 경고 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function warn(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'warn',
+    context
+  });
+}
+
+/**
+ * 디버그 수준의 로그를 기록합니다.
+ * @param message 로그 메시지
+ * @param context 추가 컨텍스트 정보
+ */
+function debug(message: string, context?: Record<string, any>): void {
+  log({
+    message,
+    level: 'debug',
+    context
+  });
+}
+
+/**
  * 오류를 기록합니다.
  * @param params 오류 로그 매개변수
  */
@@ -155,6 +194,9 @@ function setUser(user: { id?: string; email?: string }): void {
 // 로거 객체 내보내기
 const logger = {
   log,
+  info,
+  warn,
+  debug,
   error,
   startTransaction,
   setUser

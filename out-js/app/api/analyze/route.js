@@ -35,7 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { NextResponse } from 'next/server';
-import { generateKeywordAnalysis } from '../../../lib/rag_engine';
+import { generateKeywordAnalysis } from '@/lib/rag_engine';
 export function POST(request) {
     return __awaiter(this, void 0, void 0, function () {
         var body, analysisText, error_1;

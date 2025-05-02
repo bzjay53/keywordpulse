@@ -1,89 +1,116 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getSession, signOut } from './supabaseClient';
 
-interface AuthContextType {
-  user: any;
+// AuthContext 타입 정의
+type AuthContextType = {
+  user: any | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  error: string | null;
   refreshSession: () => Promise<void>;
-}
+  logout: () => Promise<void>;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// 기본값 생성
+const defaultAuthContext: AuthContextType = {
+  user: null,
+  loading: true,
+  error: null,
+  refreshSession: async () => {},
+  logout: async () => {},
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+// AuthContext 생성
+const AuthContext = createContext<AuthContextType>(defaultAuthContext);
+
+// AuthContext Provider를 위한 Props 타입
+type AuthProviderProps = {
+  children: ReactNode;
+};
+
+// AuthProvider 컴포넌트
+export function AuthProvider({ children }: AuthProviderProps) {
+  const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const supabase = createClientComponentClient();
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error checking user session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      router.refresh();
-    } catch (error) {
-      console.error('Error signing in:', error);
-      throw error;
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      router.refresh();
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
-  };
-
+  // 세션 새로고침 함수
   const refreshSession = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      router.refresh();
-    } catch (error) {
-      console.error('Error refreshing session:', error);
+      setLoading(true);
+      const { data, error } = await getSession();
+      
+      if (error) {
+        throw error;
+      }
+      
+      setUser(data.session?.user || null);
+    } catch (err: any) {
+      console.error('세션 새로고침 오류:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  // 로그아웃 함수
+  const logout = async () => {
+    try {
+      setLoading(true);
+      await signOut();
+      setUser(null);
+    } catch (err: any) {
+      console.error('로그아웃 오류:', err.message);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 초기 세션 로드
+  useEffect(() => {
+    const loadSession = async () => {
+      await refreshSession();
+    };
+    
+    loadSession();
+  }, []);
+
+  // 인증 상태 변경 시 이벤트 리스너 (실제 Supabase 환경에서 활용)
+  useEffect(() => {
+    // 서버 사이드 렌더링 시 실행하지 않음
+    if (typeof window === 'undefined') return;
+    
+    const checkSession = setInterval(async () => {
+      const { data } = await getSession();
+      const currentUser = data.session?.user || null;
+      
+      // 사용자 상태가 변경된 경우에만 업데이트
+      if (JSON.stringify(currentUser) !== JSON.stringify(user)) {
+        setUser(currentUser);
+      }
+    }, 60000); // 1분마다 세션 확인
+    
+    return () => clearInterval(checkSession);
+  }, [user]);
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut, refreshSession }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        refreshSession,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
+// useAuth 훅
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 } 

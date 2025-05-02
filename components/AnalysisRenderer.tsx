@@ -10,20 +10,33 @@ interface AnalysisRendererProps {
  * 마크다운 형식의 분석 텍스트를 렌더링하는 컴포넌트
  */
 const AnalysisRenderer: React.FC<AnalysisRendererProps> = ({ 
-  analysisText,
-  maxHeight = '350px'
+  analysisText, 
+  maxHeight = '100%' 
 }) => {
-  if (!analysisText) {
-    return (
-      <div className="bg-gray-50 min-h-[100px] flex items-center justify-center text-gray-500">
-        <p>표시할 분석 결과가 없습니다.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className={`prose prose-sm max-w-none overflow-y-auto max-h-[${maxHeight}] text-gray-800`}>
-      <ReactMarkdown>{analysisText}</ReactMarkdown>
+    <div 
+      className="markdown-content overflow-auto bg-white rounded-lg p-4" 
+      style={{ maxHeight }}
+    >
+      <ReactMarkdown
+        className="prose max-w-none"
+        components={{
+          h1: (props) => <h1 className="text-2xl font-bold my-4" {...props} />,
+          h2: (props) => <h2 className="text-xl font-bold my-3" {...props} />,
+          h3: (props) => <h3 className="text-lg font-bold my-2" {...props} />,
+          h4: (props) => <h4 className="text-base font-bold my-2" {...props} />,
+          p: (props) => <p className="my-2" {...props} />,
+          ul: (props) => <ul className="list-disc pl-5 my-2" {...props} />,
+          ol: (props) => <ol className="list-decimal pl-5 my-2" {...props} />,
+          li: (props) => <li className="my-1" {...props} />,
+          a: (props) => <a className="text-blue-600 hover:underline" {...props} />,
+          blockquote: (props) => <blockquote className="border-l-4 border-gray-200 pl-4 italic my-4" {...props} />,
+          code: (props) => <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props} />,
+          pre: (props) => <pre className="bg-gray-100 p-4 rounded overflow-auto" {...props} />,
+        }}
+      >
+        {analysisText}
+      </ReactMarkdown>
     </div>
   );
 };

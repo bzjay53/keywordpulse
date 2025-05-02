@@ -161,3 +161,172 @@ export function sendMultipleMessages(botToken_1, chatIds_1, text_1) {
         });
     });
 }
+/**
+ * 여러 채팅방에 메시지를 전송합니다.
+ * @param botToken Telegram Bot Token
+ * @param chatIds 채팅방 ID 배열
+ * @param message 전송할 메시지
+ * @returns API 응답
+ */
+export function sendMessageToMultipleChats(botToken_1, chatIds_1, message_1) {
+    return __awaiter(this, arguments, void 0, function (botToken, chatIds, message, parseMode) {
+        var responses, success, failed, _i, chatIds_2, chatId, response, error_2;
+        if (parseMode === void 0) { parseMode = 'HTML'; }
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    responses = [];
+                    success = 0;
+                    failed = 0;
+                    _i = 0, chatIds_2 = chatIds;
+                    _a.label = 1;
+                case 1:
+                    if (!(_i < chatIds_2.length)) return [3 /*break*/, 6];
+                    chatId = chatIds_2[_i];
+                    _a.label = 2;
+                case 2:
+                    _a.trys.push([2, 4, , 5]);
+                    return [4 /*yield*/, sendTelegramMessage(botToken, {
+                            chat_id: chatId,
+                            text: message,
+                            parse_mode: parseMode,
+                            disable_web_page_preview: true
+                        })];
+                case 3:
+                    response = _a.sent();
+                    responses.push(response);
+                    if (response.ok) {
+                        success++;
+                    }
+                    else {
+                        failed++;
+                    }
+                    return [3 /*break*/, 5];
+                case 4:
+                    error_2 = _a.sent();
+                    failed++;
+                    responses.push({
+                        ok: false,
+                        description: error_2 instanceof Error ? error_2.message : '알 수 없는 오류'
+                    });
+                    return [3 /*break*/, 5];
+                case 5:
+                    _i++;
+                    return [3 /*break*/, 1];
+                case 6: return [2 /*return*/, { success: success, failed: failed, responses: responses }];
+            }
+        });
+    });
+}
+/**
+ * Telegram API 에러 코드 처리
+ * @param errorCode 에러 코드
+ * @returns 처리 결과
+ */
+export function handleTelegramErrorCode(errorCode) {
+    switch (errorCode) {
+        case 400:
+            return { retryable: false, message: '잘못된 요청 형식입니다. 요청 내용을 확인하세요.' };
+        case 401:
+            return { retryable: false, message: '인증 토큰이 유효하지 않습니다. 봇 토큰을 확인하세요.' };
+        case 403:
+            return { retryable: false, message: '봇이 차단되었거나 권한이 없습니다.' };
+        case 404:
+            return { retryable: false, message: '요청한 리소스를 찾을 수 없습니다. Chat ID를 확인하세요.' };
+        case 409:
+            return { retryable: true, message: '충돌이 발생했습니다. 잠시 후 다시 시도하세요.' };
+        case 429:
+            return { retryable: true, message: '요청 한도를 초과했습니다.', waitTime: 60 };
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+            return { retryable: true, message: 'Telegram 서버 오류입니다. 잠시 후 다시 시도하세요.' };
+        default:
+            return { retryable: true, message: "\uC54C \uC218 \uC5C6\uB294 \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4. (\uCF54\uB4DC: ".concat(errorCode, ")") };
+    }
+}
+/**
+ * 에러 메시지 형식화
+ * @param error 에러 객체
+ * @returns 사용자 친화적인 에러 메시지
+ */
+export function formatErrorMessage(error) {
+    if (error instanceof Error) {
+        return "\uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4: ".concat(error.message);
+    }
+    return '알 수 없는 오류가 발생했습니다.';
+}
+/**
+ * Telegram 설정 유효성 검사
+ * @param token 봇 토큰
+ * @param chatId 채팅 ID
+ * @returns 검증 결과
+ */
+export function validateTelegramConfig(token, chatId) {
+    if (!token) {
+        return { valid: false, message: 'Telegram 봇 토큰이 설정되지 않았습니다.' };
+    }
+    if (!token.match(/^\d+:[A-Za-z0-9_-]{35}$/)) {
+        return { valid: false, message: 'Telegram 봇 토큰 형식이 유효하지 않습니다.' };
+    }
+    if (!chatId) {
+        return { valid: false, message: 'Telegram 채팅 ID가 설정되지 않았습니다.' };
+    }
+    return { valid: true, message: 'Telegram 설정이 유효합니다.' };
+}
+/**
+ * Telegram 채팅 ID 유효성 검사
+ * @param chatId 채팅 ID
+ * @returns 검증 결과
+ */
+export function validateTelegramChatId(chatId) {
+    if (!chatId) {
+        return { valid: false, message: '채팅 ID가 제공되지 않았습니다.' };
+    }
+    if (!chatId.match(/^-?\d+$/)) {
+        return { valid: false, message: '채팅 ID는 숫자여야 합니다.' };
+    }
+    return { valid: true, message: '채팅 ID가 유효합니다.' };
+}
+/**
+ * 키워드 분석 결과를 Telegram 메시지로 포맷팅
+ * @param data 키워드 분석 데이터
+ * @returns 포맷팅된 HTML 메시지
+ */
+export function formatKeywordAnalysisMessage(data) {
+    if (!data || !data.keyword) {
+        return '<b>⚠️ 잘못된 분석 데이터</b>';
+    }
+    var keyword = data.keyword;
+    var volume = data.volume || '정보 없음';
+    var trend = data.trend || '정보 없음';
+    var sentiment = data.sentiment || { positive: 0, neutral: 0, negative: 0 };
+    // 감성 분석 그래프 생성
+    var positiveBar = '🟢'.repeat(Math.round(sentiment.positive * 10)) || '▫️';
+    var neutralBar = '🟡'.repeat(Math.round(sentiment.neutral * 10)) || '▫️';
+    var negativeBar = '🔴'.repeat(Math.round(sentiment.negative * 10)) || '▫️';
+    // 관련 키워드 처리
+    var relatedKeywords = data.related && data.related.length > 0
+        ? data.related.slice(0, 5).map(function (k) { return "\u2022 ".concat(k); }).join('\n')
+        : '관련 키워드 정보 없음';
+    return "\n<b>\uD83D\uDCCA \uD0A4\uC6CC\uB4DC \uBD84\uC11D \uACB0\uACFC</b>\n\n<b>\uD0A4\uC6CC\uB4DC:</b> ".concat(keyword, "\n<b>\uAC80\uC0C9\uB7C9:</b> ").concat(volume, "\n<b>\uCD94\uC138:</b> ").concat(trend, "\n\n<b>\uAC10\uC131 \uBD84\uC11D:</b>\n\uAE0D\uC815\uC801 (").concat(Math.round(sentiment.positive * 100), "%): ").concat(positiveBar, "\n\uC911\uB9BD\uC801 (").concat(Math.round(sentiment.neutral * 100), "%): ").concat(neutralBar, "\n\uBD80\uC815\uC801 (").concat(Math.round(sentiment.negative * 100), "%): ").concat(negativeBar, "\n\n<b>\uAD00\uB828 \uD0A4\uC6CC\uB4DC:</b>\n").concat(relatedKeywords, "\n\n<i>\uBD84\uC11D \uC2DC\uAC04: ").concat(new Date().toLocaleString('ko-KR'), "</i>\n");
+}
+/**
+ * RAG 결과를 Telegram 메시지로 포맷팅
+ * @param data RAG 검색 결과 데이터
+ * @returns 포맷팅된 HTML 메시지
+ */
+export function formatRagResultForTelegram(data) {
+    if (!data || !data.query || !data.results) {
+        return '<b>⚠️ 잘못된 검색 결과 데이터</b>';
+    }
+    var query = data.query;
+    var results = data.results.slice(0, 3); // 상위 3개만 표시
+    // 검색 결과 포맷팅
+    var formattedResults = results.map(function (result, index) {
+        var _a;
+        return "\n<b>".concat(index + 1, ". ").concat(result.title || '제목 없음', "</b>\n").concat(result.snippet || ((_a = result.content) === null || _a === void 0 ? void 0 : _a.substring(0, 150)) + '...' || '내용 없음', "\n").concat(result.url ? "<a href=\"".concat(result.url, "\">\uC790\uC138\uD788 \uBCF4\uAE30</a>") : '', "\n");
+    }).join('\n');
+    return "\n<b>\uD83D\uDD0D \uC9C0\uC2DD \uAC80\uC0C9 \uACB0\uACFC</b>\n\n<b>\uAC80\uC0C9\uC5B4:</b> ".concat(query, "\n\n<b>\uAC80\uC0C9 \uACB0\uACFC:</b>\n").concat(formattedResults || '검색 결과가 없습니다.', "\n\n<i>\uAC80\uC0C9 \uC2DC\uAC04: ").concat(new Date().toLocaleString('ko-KR'), "</i>\n");
+}

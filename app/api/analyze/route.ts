@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateKeywordAnalysis } from '../../../lib/rag_engine';
+import { generateKeywordAnalysis } from '@/lib/rag_engine';
 
 export async function POST(request: NextRequest) {
   try {

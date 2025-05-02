@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendTelegramMessage, formatRagResultForTelegram } from '../../../../lib/telegram';
-import { KeywordData } from '../../../../lib/rag-integration';
-import { ApiError } from '../../../../lib/exceptions';
+import { sendTelegramMessage, formatRagResultForTelegram } from '@/lib/telegram';
+import { KeywordData } from '@/lib/rag-integration';
+import { ApiError } from '@/lib/exceptions';
 
 // 정적 내보내기와 호환되도록 force-dynamic 설정 제거
 // export const dynamic = 'force-dynamic';
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     let errorMessage = '분석 결과 전송 중 오류가 발생했습니다.';
     
     if (error instanceof ApiError) {
-      status = error.statusCode;
+      status = error.status;
       errorMessage = error.message;
     }
     

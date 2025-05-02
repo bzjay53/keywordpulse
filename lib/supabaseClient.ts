@@ -1,10 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient as supabaseCreateClient } from '@supabase/supabase-js';
 
 // Supabase 클라이언트 초기화
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = supabaseCreateClient(supabaseUrl, supabaseAnonKey);
+
+// createClient 함수 export
+export function createClient() {
+  return supabaseCreateClient(supabaseUrl, supabaseAnonKey);
+}
 
 // 로그인 함수
 export async function signIn(email: string, password: string) {

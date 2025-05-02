@@ -1,4 +1,6 @@
-'use client';
+/**
+ * Telegram 기능 관련 예외 및 오류 처리 모듈
+ */
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -15,125 +17,119 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 /**
- * API 에러 클래스
- * API 엔드포인트에서 발생하는 오류를 표준화하기 위한 클래스입니다.
+ * Telegram 관련 작업 중 발생하는 기본 예외 클래스
+ */
+var TelegramException = /** @class */ (function (_super) {
+    __extends(TelegramException, _super);
+    function TelegramException(message) {
+        var _this = _super.call(this, message) || this;
+        _this.name = 'TelegramException';
+        return _this;
+    }
+    return TelegramException;
+}(Error));
+export { TelegramException };
+/**
+ * Telegram 인증 토큰 관련 예외
+ */
+var TelegramTokenException = /** @class */ (function (_super) {
+    __extends(TelegramTokenException, _super);
+    function TelegramTokenException(message) {
+        if (message === void 0) { message = 'Telegram 봇 토큰이 유효하지 않거나 제공되지 않았습니다'; }
+        var _this = _super.call(this, message) || this;
+        _this.name = 'TelegramTokenException';
+        return _this;
+    }
+    return TelegramTokenException;
+}(TelegramException));
+export { TelegramTokenException };
+/**
+ * Telegram 메시지 전송 실패 예외
+ */
+var TelegramSendException = /** @class */ (function (_super) {
+    __extends(TelegramSendException, _super);
+    function TelegramSendException(message, response) {
+        var _this = _super.call(this, message) || this;
+        _this.name = 'TelegramSendException';
+        _this.response = response;
+        return _this;
+    }
+    return TelegramSendException;
+}(TelegramException));
+export { TelegramSendException };
+/**
+ * Telegram API 요청 제한 초과 예외
+ */
+var TelegramRateLimitException = /** @class */ (function (_super) {
+    __extends(TelegramRateLimitException, _super);
+    function TelegramRateLimitException(message, retryAfter) {
+        if (message === void 0) { message = 'Telegram API 요청 한도를 초과했습니다'; }
+        var _this = _super.call(this, message) || this;
+        _this.name = 'TelegramRateLimitException';
+        _this.retryAfter = retryAfter;
+        return _this;
+    }
+    return TelegramRateLimitException;
+}(TelegramException));
+export { TelegramRateLimitException };
+/**
+ * Telegram 채팅 ID 관련 예외
+ */
+var TelegramChatIdException = /** @class */ (function (_super) {
+    __extends(TelegramChatIdException, _super);
+    function TelegramChatIdException(message) {
+        if (message === void 0) { message = '유효하지 않은 Telegram 채팅 ID입니다'; }
+        var _this = _super.call(this, message) || this;
+        _this.name = 'TelegramChatIdException';
+        return _this;
+    }
+    return TelegramChatIdException;
+}(TelegramException));
+export { TelegramChatIdException };
+/**
+ * API 요청 중 발생한 오류를 표현하는 사용자 정의 오류 클래스입니다.
  */
 var ApiError = /** @class */ (function (_super) {
     __extends(ApiError, _super);
-    /**
-     * API 에러 생성자
-     *
-     * @param statusCode HTTP 상태 코드
-     * @param message 에러 메시지
-     */
-    function ApiError(statusCode, message) {
+    function ApiError(message, status) {
+        if (status === void 0) { status = 500; }
         var _this = _super.call(this, message) || this;
-        _this.statusCode = statusCode;
         _this.name = 'ApiError';
-        // Error 객체 프로토타입 체인 설정 (TypeScript에서 instanceof를 올바르게 작동시키기 위함)
-        Object.setPrototypeOf(_this, ApiError.prototype);
+        _this.status = status;
         return _this;
     }
-    /**
-     * API 에러 응답 객체를 생성합니다.
-     *
-     * @returns 에러 응답 객체
-     */
-    ApiError.prototype.toResponse = function () {
-        return {
-            success: false,
-            message: this.message,
-            statusCode: this.statusCode
-        };
-    };
     return ApiError;
 }(Error));
 export { ApiError };
 /**
- * 인증 에러 클래스
- * 인증 문제로 인한 오류를 처리하기 위한 클래스입니다.
+ * 예외를 사용자 친화적인 메시지로 변환합니다.
+ * @param exception 예외 객체
+ * @returns 사용자 친화적인 오류 메시지
  */
-var AuthError = /** @class */ (function (_super) {
-    __extends(AuthError, _super);
-    function AuthError(message) {
-        if (message === void 0) { message = '인증이 필요합니다'; }
-        var _this = _super.call(this, 401, message) || this;
-        _this.name = 'AuthError';
-        // Error 객체 프로토타입 체인 설정
-        Object.setPrototypeOf(_this, AuthError.prototype);
-        return _this;
+export function formatTelegramError(exception) {
+    if (exception instanceof TelegramTokenException) {
+        return '텔레그램 봇 설정 오류가 발생했습니다. 관리자에게 문의하세요.';
     }
-    return AuthError;
-}(ApiError));
-export { AuthError };
-/**
- * 권한 에러 클래스
- * 권한 부족으로 인한 오류를 처리하기 위한 클래스입니다.
- */
-var ForbiddenError = /** @class */ (function (_super) {
-    __extends(ForbiddenError, _super);
-    function ForbiddenError(message) {
-        if (message === void 0) { message = '이 작업을 수행할 권한이 없습니다'; }
-        var _this = _super.call(this, 403, message) || this;
-        _this.name = 'ForbiddenError';
-        // Error 객체 프로토타입 체인 설정
-        Object.setPrototypeOf(_this, ForbiddenError.prototype);
-        return _this;
+    else if (exception instanceof TelegramSendException) {
+        return '메시지 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
     }
-    return ForbiddenError;
-}(ApiError));
-export { ForbiddenError };
-/**
- * 엔티티 찾을 수 없음 에러 클래스
- * 요청한 리소스를 찾을 수 없는 오류를 처리하기 위한 클래스입니다.
- */
-var NotFoundError = /** @class */ (function (_super) {
-    __extends(NotFoundError, _super);
-    function NotFoundError(entity) {
-        if (entity === void 0) { entity = '리소스'; }
-        var _this = _super.call(this, 404, "\uC694\uCCAD\uD55C ".concat(entity, "\uB97C \uCC3E\uC744 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4")) || this;
-        _this.name = 'NotFoundError';
-        // Error 객체 프로토타입 체인 설정
-        Object.setPrototypeOf(_this, NotFoundError.prototype);
-        return _this;
+    else if (exception instanceof TelegramRateLimitException) {
+        var waitTime = exception.retryAfter ? "".concat(exception.retryAfter, "\uCD08 \uD6C4") : '잠시 후';
+        return "\uB108\uBB34 \uB9CE\uC740 \uC694\uCCAD\uC774 \uC788\uC5C8\uC2B5\uB2C8\uB2E4. ".concat(waitTime, " \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.");
     }
-    return NotFoundError;
-}(ApiError));
-export { NotFoundError };
-/**
- * 유효성 검사 에러 클래스
- * 입력 데이터의 유효성 검사 실패를 처리하기 위한 클래스입니다.
- */
-var ValidationError = /** @class */ (function (_super) {
-    __extends(ValidationError, _super);
-    /**
-     * 유효성 검사 에러 생성자
-     *
-     * @param message 에러 메시지
-     * @param errors 필드별 에러 메시지
-     */
-    function ValidationError(message, errors) {
-        if (message === void 0) { message = '유효하지 않은 입력 데이터'; }
-        var _this = _super.call(this, 400, message) || this;
-        _this.name = 'ValidationError';
-        _this.errors = errors;
-        // Error 객체 프로토타입 체인 설정
-        Object.setPrototypeOf(_this, ValidationError.prototype);
-        return _this;
+    else if (exception instanceof TelegramChatIdException) {
+        return '알림을 받을 대상이 올바르게 설정되지 않았습니다. 관리자에게 문의하세요.';
     }
-    /**
-     * API 에러 응답 객체를 생성합니다.
-     *
-     * @returns 에러 응답 객체
-     */
-    ValidationError.prototype.toResponse = function () {
-        return {
-            success: false,
-            message: this.message,
-            statusCode: this.statusCode,
-            errors: this.errors
-        };
-    };
-    return ValidationError;
-}(ApiError));
-export { ValidationError };
+    else if (exception instanceof TelegramException) {
+        return '텔레그램 알림 서비스에 오류가 발생했습니다.';
+    }
+    else if (exception instanceof ApiError) {
+        return "API \uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4: ".concat(exception.message);
+    }
+    else if (exception instanceof Error) {
+        return "\uC624\uB958\uAC00 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4: ".concat(exception.message);
+    }
+    else {
+        return '알 수 없는 오류가 발생했습니다.';
+    }
+}

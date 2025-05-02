@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import logger from '../../../lib/logger';
+import logger from '@/lib/logger';
 
 // Edge 런타임 설정
 export const runtime = 'edge';

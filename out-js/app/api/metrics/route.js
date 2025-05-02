@@ -38,7 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { NextResponse } from 'next/server';
-import logger from '../../lib/logger';
+import logger from '@/lib/logger';
 // Edge 런타임 설정 (정적 내보내기 호환)
 export var runtime = 'edge';
 /**

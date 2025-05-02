@@ -5,6 +5,7 @@
 
 import logger from './logger';
 import OpenAI from 'openai';
+import crypto from 'crypto';
 
 // OpenAI API 클라이언트 초기화
 // 환경 변수가 설정되어 있지 않은 경우 개발 목적으로 기본값을 사용
@@ -13,12 +14,29 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true // 클라이언트 측 사용을 위한 설정 (개발 환경에서만 사용)
 });
 
+// 임베딩 캐시 인터페이스
+interface EmbeddingCache {
+  [key: string]: {
+    embedding: number[];
+    timestamp: number;
+    model: string;
+  };
+}
+
+// 캐시 스토리지
+const embeddingCache: EmbeddingCache = {};
+
+// 캐시 설정
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간 캐시 유효기간
+const MAX_CACHE_SIZE = 1000; // 최대 캐시 항목 수
+
 export interface RagOptions {
   maxResults?: number;
   threshold?: number;
   includeMetadata?: boolean;
-  searchProvider?: 'supabase' | 'elasticsearch' | 'pinecone' | 'llm';
+  searchProvider?: 'supabase' | 'elasticsearch' | 'pinecone' | 'llm' | 'hybrid';
   embeddingModel?: 'text-embedding-3-small' | 'text-embedding-3-large' | 'text-embedding-ada-002';
+  useCache?: boolean; // 캐시 사용 여부
 }
 
 export interface RagDocument {
@@ -73,20 +91,84 @@ export interface UserPreferences {
 }
 
 /**
+ * 캐시 키를 생성합니다
+ * @param text 임베딩할 텍스트
+ * @param model 사용할 모델
+ * @returns 캐시 키
+ */
+function createCacheKey(text: string, model: string): string {
+  return crypto
+    .createHash('md5')
+    .update(`${text}_${model}`)
+    .digest('hex');
+}
+
+/**
+ * 캐시 항목 정리
+ * 만료된 항목 및 캐시 크기 제한을 관리합니다
+ */
+function cleanupCache(): void {
+  const now = Date.now();
+  const keys = Object.keys(embeddingCache);
+  
+  // 만료된 항목 삭제
+  keys.forEach(key => {
+    if (now - embeddingCache[key].timestamp > CACHE_TTL) {
+      delete embeddingCache[key];
+    }
+  });
+  
+  // 캐시 크기 제한 관리
+  if (keys.length > MAX_CACHE_SIZE) {
+    // 가장 오래된 항목부터 삭제
+    const sortedKeys = keys.sort(
+      (a, b) => embeddingCache[a].timestamp - embeddingCache[b].timestamp
+    );
+    
+    const keysToRemove = sortedKeys.slice(0, keys.length - MAX_CACHE_SIZE);
+    keysToRemove.forEach(key => {
+      delete embeddingCache[key];
+    });
+    
+    logger.log({
+      message: `임베딩 캐시 크기 제한으로 ${keysToRemove.length}개 항목 제거됨`,
+      level: 'info'
+    });
+  }
+}
+
+/**
  * 텍스트 임베딩을 생성합니다
  * @param text 임베딩할 텍스트
  * @param model 사용할 임베딩 모델
+ * @param useCache 캐시 사용 여부
  * @returns 벡터 임베딩 배열
  */
 export async function createEmbedding(
   text: string,
-  model: 'text-embedding-3-small' | 'text-embedding-3-large' | 'text-embedding-ada-002' = 'text-embedding-3-small'
+  model: 'text-embedding-3-small' | 'text-embedding-3-large' | 'text-embedding-ada-002' = 'text-embedding-3-small',
+  useCache: boolean = true
 ): Promise<number[]> {
   try {
+    // 캐시 사용이 설정된 경우 캐시에서 임베딩 검색
+    if (useCache) {
+      const cacheKey = createCacheKey(text, model);
+      
+      if (embeddingCache[cacheKey]) {
+        logger.log({
+          message: `캐시에서 임베딩 로드됨`,
+          level: 'info',
+          context: { textLength: text.length, model, cached: true }
+        });
+        
+        return embeddingCache[cacheKey].embedding;
+      }
+    }
+    
     logger.log({
       message: `텍스트 임베딩 생성 시작`,
       level: 'info',
-      context: { textLength: text.length, model }
+      context: { textLength: text.length, model, cached: false }
     });
 
     const response = await openai.embeddings.create({
@@ -94,13 +176,30 @@ export async function createEmbedding(
       input: text,
       encoding_format: 'float'
     });
+    
+    const embedding = response.data[0].embedding;
+
+    // 캐시 사용이 설정된 경우 결과 캐싱
+    if (useCache) {
+      const cacheKey = createCacheKey(text, model);
+      embeddingCache[cacheKey] = {
+        embedding,
+        timestamp: Date.now(),
+        model
+      };
+      
+      // 정기적으로 캐시 정리 (1% 확률로 실행)
+      if (Math.random() < 0.01) {
+        cleanupCache();
+      }
+    }
 
     logger.log({
       message: `텍스트 임베딩 생성 완료`,
       level: 'info'
     });
 
-    return response.data[0].embedding;
+    return embedding;
   } catch (error) {
     logger.error({
       message: `텍스트 임베딩 생성 실패: ${error.message}`,
@@ -143,94 +242,197 @@ export function calculateCosineSimilarity(vec1: number[], vec2: number[]): numbe
 }
 
 /**
- * RAG 검색을 실행합니다
+ * BM25 관련 설정
+ */
+interface BM25Config {
+  k1: number;   // 용어 빈도 가중치 (일반적으로 1.2-2.0)
+  b: number;    // 문서 길이 정규화 (일반적으로 0.75)
+}
+
+const DEFAULT_BM25_CONFIG: BM25Config = {
+  k1: 1.5,
+  b: 0.75
+};
+
+/**
+ * BM25 검색 점수를 계산합니다
+ * @param query 검색 쿼리 단어 배열
+ * @param document 문서 내용
+ * @param avgDocLength 평균 문서 길이
+ * @param docFrequencies 단어별 문서 빈도
+ * @param totalDocs 전체 문서 수
+ * @param config BM25 설정
+ * @returns BM25 점수
+ */
+export function calculateBM25Score(
+  query: string[],
+  document: string,
+  avgDocLength: number,
+  docFrequencies: Record<string, number>,
+  totalDocs: number,
+  config: BM25Config = DEFAULT_BM25_CONFIG
+): number {
+  const { k1, b } = config;
+  const words = document.toLowerCase().split(/\s+/);
+  const docLength = words.length;
+  
+  // 문서 내 각 단어의 빈도 계산
+  const termFrequencies: Record<string, number> = {};
+  words.forEach(word => {
+    termFrequencies[word] = (termFrequencies[word] || 0) + 1;
+  });
+  
+  // 쿼리 단어별 BM25 점수 계산 및 합산
+  return query.reduce((score, term) => {
+    term = term.toLowerCase();
+    
+    if (!termFrequencies[term]) return score;
+    
+    // 역문서 빈도 (IDF) 계산
+    const df = docFrequencies[term] || 0.5;
+    const idf = Math.log(1 + (totalDocs - df + 0.5) / (df + 0.5));
+    
+    // 정규화된 용어 빈도 (TF)
+    const tf = termFrequencies[term];
+    const normTf = (tf * (k1 + 1)) / (tf + k1 * (1 - b + b * (docLength / avgDocLength)));
+    
+    return score + idf * normTf;
+  }, 0);
+}
+
+/**
+ * 텍스트에서 주요 키워드를 추출합니다
+ * @param text 텍스트
+ * @param limit 키워드 수 제한
+ * @returns 키워드 배열
+ */
+export function extractKeywords(text: string, limit: number = 10): string[] {
+  // 한국어, 영어 불용어(stopwords) 정의
+  const stopwords = new Set([
+    // 한국어 불용어
+    '이', '그', '저', '것', '및', '에', '를', '을', '이', '가', '은', '는', '와', '과',
+    '의', '로', '으로', '에서', '도', '만', '에게', '께', '에게서', '부터', '까지',
+    // 영어 불용어
+    'a', 'an', 'the', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'be', 'have', 'has',
+    'had', 'do', 'does', 'did', 'of', 'at', 'in', 'on', 'for', 'to', 'with', 'by'
+  ]);
+  
+  // 텍스트를 단어로 분리하고 불용어 제거
+  const words = text.toLowerCase()
+    .replace(/[^\w\s가-힣]/g, ' ')  // 특수 문자 제거 (한글 포함)
+    .split(/\s+/)
+    .filter(word => word.length > 1 && !stopwords.has(word));  // 불용어 및 한 글자 단어 제거
+  
+  // 단어 빈도 계산
+  const wordCounts: Record<string, number> = {};
+  words.forEach(word => {
+    wordCounts[word] = (wordCounts[word] || 0) + 1;
+  });
+  
+  // 빈도 기준 정렬 후 상위 키워드 반환
+  return Object.entries(wordCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([word]) => word);
+}
+
+/**
+ * 하이브리드 검색을 실행합니다
  * @param query 검색 쿼리
+ * @param documents 검색 대상 문서 배열
  * @param options 검색 옵션
  * @returns 검색 결과
  */
-export async function ragSearch(query: string, options: RagOptions = {}): Promise<RagSearchResult> {
+export async function hybridSearch(
+  query: string,
+  documents: RagDocument[],
+  options: RagOptions = {}
+): Promise<RagSearchResult> {
   const startTime = Date.now();
   const {
     maxResults = 5,
-    threshold = 0.7,
+    threshold = 0.5,
     includeMetadata = true,
-    searchProvider = 'supabase',
-    embeddingModel = 'text-embedding-3-small'
+    embeddingModel = 'text-embedding-3-small',
+    useCache = true
   } = options;
-
+  
   try {
-    logger.log({
-      message: `RAG 검색 시작: "${query}"`,
-      level: 'info',
-      context: { maxResults, threshold, searchProvider, embeddingModel }
+    // 쿼리에서 키워드 추출
+    const keywords = extractKeywords(query);
+    
+    // 임베딩 기반 의미적 검색
+    const queryEmbedding = await createEmbedding(query, embeddingModel, useCache);
+    
+    // BM25 검색을 위한 데이터 준비
+    const docLengths = documents.map(doc => doc.content.split(/\s+/).length);
+    const avgDocLength = docLengths.reduce((sum, len) => sum + len, 0) / documents.length;
+    
+    // 용어 빈도 계산
+    const docFrequencies: Record<string, number> = {};
+    keywords.forEach(keyword => {
+      docFrequencies[keyword] = documents.filter(doc => 
+        doc.content.toLowerCase().includes(keyword.toLowerCase())
+      ).length;
     });
-
-    // 쿼리 임베딩 생성
-    const queryEmbedding = await createEmbedding(query, embeddingModel);
-
-    // 검색 로직은 searchProvider에 따라 달라집니다
-    // 여기서는 간단한 데모 데이터를 사용하지만 실제로는 벡터 DB나 다른 검색 엔진을 사용해야 합니다
-    const demoDocuments: RagDocument[] = [
-      {
-        id: '1',
-        content: '인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.',
-        metadata: includeMetadata ? { source: 'AI 문서', date: '2023-01-01' } : undefined,
-        embedding: await createEmbedding('인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.', embeddingModel)
-      },
-      {
-        id: '2',
-        content: '기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.',
-        metadata: includeMetadata ? { source: 'ML 문서', date: '2023-02-15' } : undefined,
-        embedding: await createEmbedding('기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.', embeddingModel)
-      },
-      {
-        id: '3',
-        content: '자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.',
-        metadata: includeMetadata ? { source: 'NLP 문서', date: '2023-03-20' } : undefined,
-        embedding: await createEmbedding('자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.', embeddingModel)
-      }
-    ];
-
-    // 임베딩 기반으로 코사인 유사도 계산 및 점수 할당
-    const scoredResults = demoDocuments.map(doc => {
-      const similarity = calculateCosineSimilarity(queryEmbedding, doc.embedding);
+    
+    // 하이브리드 점수 계산 (의미적 + 키워드 기반)
+    const scoredResults = await Promise.all(documents.map(async (doc) => {
+      // 의미적 유사도 점수 (코사인 유사도)
+      const semanticScore = doc.embedding 
+        ? calculateCosineSimilarity(queryEmbedding, doc.embedding)
+        : 0;
+      
+      // 키워드 기반 점수 (BM25)
+      const keywordScore = calculateBM25Score(
+        keywords,
+        doc.content,
+        avgDocLength,
+        docFrequencies,
+        documents.length
+      );
+      
+      // 최종 하이브리드 점수 (가중치 적용: 의미적 70%, 키워드 30%)
+      const hybridScore = (semanticScore * 0.7) + (keywordScore * 0.3);
+      
       return {
         ...doc,
-        score: similarity
+        score: hybridScore
       };
-    });
-
+    }));
+    
     // 점수 기준으로 정렬하고 필터링
     const filteredResults = scoredResults
       .filter(doc => doc.score >= threshold)
       .sort((a, b) => b.score - a.score)
       .slice(0, maxResults);
-
-    // 결과에서 임베딩 제거 (응답 크기 감소)
-    const cleanResults = filteredResults.map(({ embedding, ...rest }) => rest);
-
+    
     const executionTime = Date.now() - startTime;
-
+    
     logger.log({
-      message: `RAG 검색 완료: ${cleanResults.length} 결과 찾음`,
+      message: `하이브리드 검색 완료: "${query}"`,
       level: 'info',
-      context: { executionTime }
+      context: {
+        resultCount: filteredResults.length,
+        executionTime,
+        keywords
+      }
     });
-
+    
     return {
       query,
-      results: cleanResults,
-      totalCount: cleanResults.length,
+      results: filteredResults,
+      totalCount: filteredResults.length,
       executionTime
     };
   } catch (error) {
     logger.error({
-      message: `RAG 검색 실패: ${error.message}`,
+      message: `하이브리드 검색 실패: ${error.message}`,
       error,
-      context: { query, options }
+      context: { query }
     });
-
-    throw new Error(`RAG 검색 실패: ${error.message}`);
+    
+    throw new Error(`하이브리드 검색 실패: ${error.message}`);
   }
 }
 
@@ -498,6 +700,139 @@ export function generateKeywordAnalysis(
   }
 }
 
+/**
+ * 캐시 통계를 반환합니다
+ * @returns 캐시 통계 정보
+ */
+export function getCacheStats() {
+  const now = Date.now();
+  const cacheKeys = Object.keys(embeddingCache);
+  const activeItems = cacheKeys.filter(
+    key => now - embeddingCache[key].timestamp <= CACHE_TTL
+  ).length;
+  
+  return {
+    totalItems: cacheKeys.length,
+    activeItems,
+    expiredItems: cacheKeys.length - activeItems,
+    cacheSize: JSON.stringify(embeddingCache).length / 1024, // KB 단위
+    maxItems: MAX_CACHE_SIZE
+  };
+}
+
+/**
+ * 캐시를 수동으로 비웁니다
+ */
+export function clearCache(): void {
+  const itemCount = Object.keys(embeddingCache).length;
+  Object.keys(embeddingCache).forEach(key => {
+    delete embeddingCache[key];
+  });
+  
+  logger.log({
+    message: `임베딩 캐시 수동 삭제됨: ${itemCount}개 항목`,
+    level: 'info'
+  });
+}
+
+/**
+ * RAG 검색을 실행합니다
+ * @param query 검색 쿼리
+ * @param options 검색 옵션
+ * @returns 검색 결과
+ */
+export async function ragSearch(query: string, options: RagOptions = {}): Promise<RagSearchResult> {
+  const startTime = Date.now();
+  const {
+    maxResults = 5,
+    threshold = 0.7,
+    includeMetadata = true,
+    searchProvider = 'supabase',
+    embeddingModel = 'text-embedding-3-small',
+    useCache = true
+  } = options;
+
+  try {
+    logger.log({
+      message: `RAG 검색 시작: "${query}"`,
+      level: 'info',
+      context: { maxResults, threshold, searchProvider, embeddingModel, useCache }
+    });
+
+    // 쿼리 임베딩 생성 (캐시 사용)
+    const queryEmbedding = await createEmbedding(query, embeddingModel, useCache);
+
+    // 검색 로직은 searchProvider에 따라 달라집니다
+    // 여기서는 간단한 데모 데이터를 사용하지만 실제로는 벡터 DB나 다른 검색 엔진을 사용해야 합니다
+    const demoDocuments: RagDocument[] = [
+      {
+        id: '1',
+        content: '인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.',
+        metadata: includeMetadata ? { source: 'AI 문서', date: '2023-01-01' } : undefined,
+        embedding: await createEmbedding('인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.', embeddingModel, useCache)
+      },
+      {
+        id: '2',
+        content: '기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.',
+        metadata: includeMetadata ? { source: 'ML 문서', date: '2023-02-15' } : undefined,
+        embedding: await createEmbedding('기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.', embeddingModel, useCache)
+      },
+      {
+        id: '3',
+        content: '자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.',
+        metadata: includeMetadata ? { source: 'NLP 문서', date: '2023-03-20' } : undefined,
+        embedding: await createEmbedding('자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.', embeddingModel, useCache)
+      }
+    ];
+
+    // 하이브리드 검색 사용 (벡터 + 키워드 검색)
+    if (searchProvider === 'hybrid') {
+      return hybridSearch(query, demoDocuments, options);
+    }
+
+    // 임베딩 기반으로 코사인 유사도 계산 및 점수 할당
+    const scoredResults = demoDocuments.map(doc => {
+      const similarity = calculateCosineSimilarity(queryEmbedding, doc.embedding);
+      return {
+        ...doc,
+        score: similarity
+      };
+    });
+
+    // 점수 기준으로 정렬하고 필터링
+    const filteredResults = scoredResults
+      .filter(doc => doc.score >= threshold)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxResults);
+
+    // 결과에서 임베딩 제거 (응답 크기 감소)
+    const cleanResults = filteredResults.map(({ embedding, ...rest }) => rest);
+
+    const executionTime = Date.now() - startTime;
+
+    logger.log({
+      message: `RAG 검색 완료: ${cleanResults.length} 결과 찾음`,
+      level: 'info',
+      context: { executionTime }
+    });
+
+    return {
+      query,
+      results: cleanResults,
+      totalCount: cleanResults.length,
+      executionTime
+    };
+  } catch (error) {
+    logger.error({
+      message: `RAG 검색 실패: ${error.message}`,
+      error,
+      context: { query, options }
+    });
+
+    throw new Error(`RAG 검색 실패: ${error.message}`);
+  }
+}
+
 // 인라인 RAG 유틸리티 기본 내보내기
 export default {
   search: ragSearch,
@@ -505,5 +840,9 @@ export default {
   generateKeywordAnalysis,
   categorizeKeyword,
   createEmbedding,
-  calculateCosineSimilarity
+  calculateCosineSimilarity,
+  calculateBM25Score,
+  extractKeywords,
+  getCacheStats,
+  clearCache
 }; 

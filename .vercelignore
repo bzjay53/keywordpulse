@@ -12,6 +12,12 @@ coverage
 .github
 .vscode
 
+# 배포에 필요한 디렉토리
+# app
+# lib
+# components
+# hooks
+
 # 중요: tsconfig.json은 무시하지 말 것
 # tsconfig.json
 

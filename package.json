@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node vercel-debug.js && node tsc-build.js || exit 0",
+    "build": "next build",
+    "build-legacy": "node vercel-debug.js && node tsc-build.js || exit 0",
     "build-static": "node build.js",
     "postinstall": "next telemetry disable",
     "start": "next start",

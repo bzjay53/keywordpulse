@@ -6,6 +6,7 @@
 import logger from './logger';
 import OpenAI from 'openai';
 import crypto from 'crypto';
+import { performVectorSearch, storeVectorData, VectorData } from './supabaseClient';
 
 // OpenAI API 클라이언트 초기화
 // 환경 변수가 설정되어 있지 않은 경우 개발 목적으로 기본값을 사용
@@ -762,45 +763,66 @@ export async function ragSearch(query: string, options: RagOptions = {}): Promis
     // 쿼리 임베딩 생성 (캐시 사용)
     const queryEmbedding = await createEmbedding(query, embeddingModel, useCache);
 
-    // 검색 로직은 searchProvider에 따라 달라집니다
-    // 여기서는 간단한 데모 데이터를 사용하지만 실제로는 벡터 DB나 다른 검색 엔진을 사용해야 합니다
-    const demoDocuments: RagDocument[] = [
-      {
-        id: '1',
-        content: '인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.',
-        metadata: includeMetadata ? { source: 'AI 문서', date: '2023-01-01' } : undefined,
-        embedding: await createEmbedding('인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.', embeddingModel, useCache)
-      },
-      {
-        id: '2',
-        content: '기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.',
-        metadata: includeMetadata ? { source: 'ML 문서', date: '2023-02-15' } : undefined,
-        embedding: await createEmbedding('기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.', embeddingModel, useCache)
-      },
-      {
-        id: '3',
-        content: '자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.',
-        metadata: includeMetadata ? { source: 'NLP 문서', date: '2023-03-20' } : undefined,
-        embedding: await createEmbedding('자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.', embeddingModel, useCache)
-      }
-    ];
-
     // 하이브리드 검색 사용 (벡터 + 키워드 검색)
     if (searchProvider === 'hybrid') {
-      return hybridSearch(query, demoDocuments, options);
+      return hybridSearch(query, await getDocumentsForSearch(), options);
     }
 
-    // 임베딩 기반으로 코사인 유사도 계산 및 점수 할당
-    const scoredResults = demoDocuments.map(doc => {
-      const similarity = calculateCosineSimilarity(queryEmbedding, doc.embedding);
-      return {
-        ...doc,
-        score: similarity
-      };
-    });
+    let results: RagDocument[] = [];
+
+    // 검색 공급자에 따라 다른 검색 로직 사용
+    if (searchProvider === 'supabase') {
+      // Supabase 벡터 검색 사용
+      const searchResult = await performVectorSearch({
+        queryVector: queryEmbedding,
+        limit: maxResults,
+        threshold: threshold,
+      });
+
+      if (searchResult.success) {
+        // Supabase 검색 결과를 RagDocument 형식으로 변환
+        results = searchResult.results.map(item => ({
+          id: item.id,
+          content: item.content,
+          metadata: includeMetadata ? item.metadata : undefined,
+          score: item.score
+        }));
+      } else {
+        // 오류 발생 시 로깅
+        logger.error({
+          message: `Supabase 벡터 검색 실패: ${searchResult.error}`,
+          error: searchResult.error,
+          context: { query }
+        });
+        
+        // 오류 시 대체 검색 결과 사용 (데모 데이터)
+        results = await getDocumentsForSearch().then(docs => {
+          // 코사인 유사도 기반 점수 계산
+          return docs.map(doc => {
+            const similarity = calculateCosineSimilarity(queryEmbedding, doc.embedding);
+            return {
+              ...doc,
+              score: similarity
+            };
+          });
+        });
+      }
+    } else {
+      // 기존 검색 로직 (데모 데이터 사용)
+      const documents = await getDocumentsForSearch();
+      
+      // 코사인 유사도 기반 점수 계산
+      results = documents.map(doc => {
+        const similarity = calculateCosineSimilarity(queryEmbedding, doc.embedding);
+        return {
+          ...doc,
+          score: similarity
+        };
+      });
+    }
 
     // 점수 기준으로 정렬하고 필터링
-    const filteredResults = scoredResults
+    const filteredResults = results
       .filter(doc => doc.score >= threshold)
       .sort((a, b) => b.score - a.score)
       .slice(0, maxResults);
@@ -813,7 +835,7 @@ export async function ragSearch(query: string, options: RagOptions = {}): Promis
     logger.log({
       message: `RAG 검색 완료: ${cleanResults.length} 결과 찾음`,
       level: 'info',
-      context: { executionTime }
+      context: { executionTime, searchProvider }
     });
 
     return {
@@ -830,6 +852,92 @@ export async function ragSearch(query: string, options: RagOptions = {}): Promis
     });
 
     throw new Error(`RAG 검색 실패: ${error.message}`);
+  }
+}
+
+/**
+ * 검색에 사용할 문서 데이터를 가져옵니다
+ * @returns 문서 배열
+ */
+async function getDocumentsForSearch(): Promise<RagDocument[]> {
+  // 데모 문서 데이터 (실제 환경에서는 데이터베이스나 벡터 저장소에서 가져와야 함)
+  const demoDocuments: RagDocument[] = [
+    {
+      id: '1',
+      content: '인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.',
+      metadata: { source: 'AI 문서', date: '2023-01-01' },
+      embedding: await createEmbedding('인공지능(AI)은 컴퓨터 시스템이 인간의 지능을 시뮬레이션하는 기술입니다.', 'text-embedding-3-small', true)
+    },
+    {
+      id: '2',
+      content: '기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.',
+      metadata: { source: 'ML 문서', date: '2023-02-15' },
+      embedding: await createEmbedding('기계 학습은 AI의 하위 분야로, 데이터로부터 학습하는 알고리즘을 포함합니다.', 'text-embedding-3-small', true)
+    },
+    {
+      id: '3',
+      content: '자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.',
+      metadata: { source: 'NLP 문서', date: '2023-03-20' },
+      embedding: await createEmbedding('자연어 처리(NLP)는 컴퓨터가 인간의 언어를 이해하고 처리하는 AI 분야입니다.', 'text-embedding-3-small', true)
+    }
+  ];
+
+  return demoDocuments;
+}
+
+/**
+ * 벡터 데이터를 저장소에 추가합니다
+ * @param content 문서 내용
+ * @param metadata 메타데이터
+ * @param embeddingModel 임베딩 모델
+ * @returns 저장 결과
+ */
+export async function addDocumentToVectorStore(
+  content: string,
+  metadata: Record<string, any> = {},
+  embeddingModel: 'text-embedding-3-small' | 'text-embedding-3-large' | 'text-embedding-ada-002' = 'text-embedding-3-small'
+) {
+  try {
+    // 임베딩 생성
+    const embedding = await createEmbedding(content, embeddingModel, true);
+    
+    // 벡터 데이터 생성 및 저장
+    const vectorData: VectorData = {
+      content,
+      embedding,
+      metadata
+    };
+    
+    // Supabase에 벡터 데이터 저장
+    const result = await storeVectorData(vectorData);
+    
+    if (!result.success) {
+      throw new Error(result.error);
+    }
+    
+    logger.log({
+      message: `벡터 데이터 저장 성공: ${result.id}`,
+      level: 'info',
+      context: { contentLength: content.length, model: embeddingModel }
+    });
+    
+    return {
+      success: true,
+      id: result.id,
+      error: null
+    };
+  } catch (error) {
+    logger.error({
+      message: `벡터 데이터 저장 실패: ${error.message}`,
+      error,
+      context: { contentLength: content.length }
+    });
+    
+    return {
+      success: false,
+      id: null,
+      error: error.message
+    };
   }
 }
 
